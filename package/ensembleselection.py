@@ -3,6 +3,8 @@ class EnsembleSelectionClassifier:
     def __init__(self):
         pass
 
+    # Expects a list of models in "models" and a validation set in "X", "y".
+    # Returns an ensemble
     def getEnsemble(self, models, X, y):
         return DummyClassifier()
 
