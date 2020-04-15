@@ -65,7 +65,11 @@ class VanillaShardedClassifier:
         shard_num = self.getShardNum(X_y_ids)
         for i in range(len(X_y_ids)):
             self.shard_data_dict[shard_num[i]].remove(X_y_ids[i])
-        for shard_i in list(set(shard_num)):
+        self.refit_shards(list(set(shard_num)))
+
+    # Refitting shards after unlearning - vanilla implementation: call fit() for every shard's model
+    def refit_shards(self, shard_num):
+        for shard_i in shard_num:
             self.shard_model_dict[shard_i] = self.fit_shard(self.X_train[self.shard_data_dict[shard_i]],
                                                             self.y_train[self.shard_data_dict[shard_i]])
 
