@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 from collections import Counter
+from package import ensembleselection
 
 
 #   VanillaShardedClassifier:
@@ -98,3 +99,24 @@ class VanillaShardedClassifier:
 
         def predict(self, X):
             return [self.prediction] * len(X)
+
+
+#   EnsembleShardedClassifier: extends VanillaShardedClassifier:
+#       - Fits an ensemble of independent shard models using ensembleselction.EnsembleSelectionClassifier
+#       - Prediction using ensemble model
+#       - Unlearning followed by creating a new ensemble using retrained shard models
+class EnsembleShardedClassifier(VanillaShardedClassifier):
+    ensembleModel = None
+
+    def fit(self, X, y):
+        super().fit(X, y)
+        self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
+            list(self.shard_model_dict.values()))
+
+    def predict(self, X):
+        return self.ensembleModel.predict(X)
+
+    def unlearn(self, X_y_ids):
+        super().unlearn(X_y_ids)
+        self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
+            list(self.shard_model_dict.values()))
