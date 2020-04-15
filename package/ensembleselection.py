@@ -3,7 +3,7 @@ class EnsembleSelectionClassifier:
     def __init__(self):
         pass
 
-    def getEnsemble(self, models=None):
+    def getEnsemble(self, models, X, y):
         return DummyClassifier()
 
 
