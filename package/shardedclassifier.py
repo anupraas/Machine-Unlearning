@@ -115,7 +115,7 @@ class EnsembleShardedClassifier(VanillaShardedClassifier):
     def fit(self, X, y):
         super().fit(X, y)
         self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
-            list(self.shard_model_dict.values()))
+            list(self.shard_model_dict.values()), self.X_train, self.y_train)
 
     def predict(self, X):
         return self.ensembleModel.predict(X)
@@ -123,4 +123,4 @@ class EnsembleShardedClassifier(VanillaShardedClassifier):
     def unlearn(self, X_y_ids):
         super().unlearn(X_y_ids)
         self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
-            list(self.shard_model_dict.values()))
+            list(self.shard_model_dict.values()), self.X_train, self.y_train)
