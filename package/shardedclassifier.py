@@ -2,6 +2,7 @@ import copy
 import numpy as np
 from collections import Counter
 from package import ensembleselection
+import autosklearn.classification
 
 
 #   VanillaShardedClassifier:
@@ -11,7 +12,6 @@ from package import ensembleselection
 #   Expects:
 #   1. Training class labels to be in range 0..n
 #   2. Unlearning calls should provide index of point to be unlearnt in the original training data set passed to fit()
-
 class VanillaShardedClassifier:
 
     def __init__(self, num_shards=1, ml_algorithm=None):
@@ -128,3 +128,70 @@ class EnsembleShardedClassifier(VanillaShardedClassifier):
         super().unlearn(X_y_ids)
         self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
             list(self.shard_model_dict.values()), self.X_train[self.cur_train_ids], self.y_train[self.cur_train_ids])
+
+
+#   AutoML-Model-Reuse-Vanilla-ShardedClassifier: Extends VanillaShardedClassifier
+#       - Unlearning followed by reusing (retraining) the model for each shard initially found by sklearn
+#       - Suited for less unlearning requests
+#       - Only one run of Bayesian optimizer for finding best models
+#       - Prediction: vanilla - majority vote
+class AMMRVanillaShardedClassifier(VanillaShardedClassifier):
+
+    def __init__(self, num_shards=1, ml_algorithm=None):
+        if not isinstance(ml_algorithm, autosklearn.estimators.AutoSklearnClassifier):
+            raise ValueError('This classifier is only valid for '
+                             'ml_algorithm=autosklearn.estimators.AutoSklearnClassifier.')
+        super().__init__(num_shards, ml_algorithm)
+
+    def refit_shards(self, shard_num):
+        for shard_i in shard_num:
+            self.shard_model_dict[shard_i] = self.shard_model_dict[shard_i].fit(
+                self.X_train[self.shard_data_dict[shard_i]],
+                self.y_train[self.shard_data_dict[shard_i]])
+
+
+#   AutoML-Model-Reuse-Ensemble-ShardedClassifier: Extends AMMRVanillaShardedClassifier and EnsembleShardedClassifier
+#       - Prediction using ensemble
+#   Use following for clarity on multiple inheritance
+# class vanilla:
+#
+#     def fit(self):
+#         print("fit of vanilla")
+#
+#     def predict(self):
+#         print("predict of vanilla")
+#
+#     def unlearn(self):
+#         print("unlearn of vanilla")
+#         self.refit()
+#
+#     def refit(self):
+#         print("refit of vanilla")
+#
+# class autovanilla(vanilla):
+#
+#     def refit(self):
+#         print("refit of autovanilla")
+#
+# class ensemble(vanilla):
+#
+#     def fit(self):
+#         super().fit()
+#         print("fit of ensemble")
+#
+#     def predict(self):
+#         print("predict of ensemble")
+#
+#     def unlearn(self):
+#         super().unlearn()
+#         print("unlearn of ensemble")
+#
+# class autoensemble(autovanilla, ensemble):
+#     pass
+#
+# obj = autoensemble()
+# obj.fit()
+# obj.predict()
+# obj.unlearn()
+class AMMREnsembleShardedClassifier(AMMRVanillaShardedClassifier, EnsembleShardedClassifier):
+    pass
