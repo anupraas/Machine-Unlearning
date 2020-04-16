@@ -34,9 +34,11 @@ class VanillaShardedClassifier:
         #       - reverse mapping of each point in training data to shard in which it lies
         #       - this is currently a hack to find shard during unlearning in O(1)
         #       - ideally this should be replaced by binary search
+        #   cur_train_ids: stored the current valid (unlearned) ids of the training set
         self.shard_data_dict = {}
         self.shard_model_dict = {}
         self.data_to_shard_dict = {}
+        self.cur_train_ids = []
 
         # Default prediction in case of 0 points in training set
         self.default_class = None
@@ -65,6 +67,7 @@ class VanillaShardedClassifier:
         shard_num = self.getShardNum(X_y_ids)
         for i in range(len(X_y_ids)):
             self.shard_data_dict[shard_num[i]].remove(X_y_ids[i])
+            self.cur_train_ids.remove(X_y_ids[i])
         self.refit_shards(list(set(shard_num)))
 
     # Refitting shards after unlearning - vanilla implementation: call fit() for every shard's model
@@ -91,6 +94,7 @@ class VanillaShardedClassifier:
             self.data_to_shard_dict[it] = manager[y[it]]
             manager[y[it]] = (manager[y[it]] + 1) % self.num_shards
         self.shard_model_dict = {sh_num: None for sh_num in range(self.num_shards)}
+        self.cur_train_ids = list(range(len(y)))
 
     def getShardNum(self, idx):
         return [self.data_to_shard_dict[id_i] for id_i in idx]
@@ -123,4 +127,4 @@ class EnsembleShardedClassifier(VanillaShardedClassifier):
     def unlearn(self, X_y_ids):
         super().unlearn(X_y_ids)
         self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
-            list(self.shard_model_dict.values()), self.X_train, self.y_train)
+            list(self.shard_model_dict.values()), self.X_train[self.cur_train_ids], self.y_train[self.cur_train_ids])
