@@ -48,11 +48,13 @@ class VanillaShardedClassifier:
         self.y_train = copy.deepcopy(y)
         self.default_class = Counter(y).most_common(1)[0][0]
         self.initialize_bookkeeping_dicts()
-        for shard_i in range(self.num_shards):
-            self.shard_model_dict[shard_i] = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
         for shard_num in self.shard_data_dict:
-            self.shard_model_dict[shard_num] = self.ml_algorithm.fit(self.X_train[self.shard_data_dict[shard_num]],
-                                                                     self.y_train[self.shard_data_dict[shard_num]])
+            dummy, pred = self.checkForDummy(shard_num, self.y_train[self.shard_data_dict[shard_num]])
+            if dummy:
+                self.shard_model_dict[shard_num] = self.DummyClassifier(prediction=pred)
+            else:
+                self.shard_model_dict[shard_num] = self.ml_algorithm.fit(self.X_train[self.shard_data_dict[shard_num]],
+                                                                         self.y_train[self.shard_data_dict[shard_num]])
 
     # Prediction - vanilla implementation: taking simple majority vote
     def predict(self, X):
@@ -76,9 +78,10 @@ class VanillaShardedClassifier:
     # Refitting shards after unlearning - vanilla implementation: call fit() for every shard's model
     def refit_shards(self, shard_num):
         for shard_i in shard_num:
-            self.shard_model_dict[shard_i] = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
-        for shard_i in shard_num:
-            if self.shard_model_dict[shard_i] is None:
+            dummy, pred = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
+            if dummy:
+                self.shard_model_dict[shard_i] = self.DummyClassifier(prediction=pred)
+            else:
                 self.shard_model_dict[shard_i] = self.ml_algorithm.fit(self.X_train[self.shard_data_dict[shard_i]],
                                                                        self.y_train[self.shard_data_dict[shard_i]])
 
@@ -99,10 +102,10 @@ class VanillaShardedClassifier:
 
     def checkForDummy(self, shard_i, y):
         if len(y) is 0:
-            return self.DummyClassifier(prediction=self.default_class)
+            return True, self.default_class
         elif len(Counter(y).keys()) is 1:
-            return self.DummyClassifier(prediction=y[0])
-        return None
+            return True, y[0]
+        return False, -1
 
     class DummyClassifier:
         prediction = 0
@@ -161,9 +164,10 @@ class AMMRVanillaShardedClassifier(VanillaShardedClassifier):
 
     def refit_shards(self, shard_num):
         for shard_i in shard_num:
-            self.shard_model_dict[shard_i] = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
-        for shard_i in shard_num:
-            if self.shard_model_dict[shard_i] is None:
+            dummy, pred = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
+            if dummy:
+                self.shard_model_dict[shard_i] = self.DummyClassifier(prediction=pred)
+            else:
                 self.shard_model_dict[shard_i] = self.shard_model_dict[shard_i].fit(
                     self.X_train[self.shard_data_dict[shard_i]],
                     self.y_train[self.shard_data_dict[shard_i]])
