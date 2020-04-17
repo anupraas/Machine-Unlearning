@@ -206,3 +206,36 @@ class AMMREnsembleShardedClassifier(AMMRVanillaShardedClassifier, EnsembleSharde
         AMMRVanillaShardedClassifier.fit(X, y)
         self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
             list(self.shard_model_dict.values()), self.X_train, self.y_train)
+
+
+# AMMRVSRandomVanillaShardedClassifier: Extends AMMRVanillaShardedClassifier
+# Auto-ML-Model-Reuse-Validation-Set-Random-VanillaShardedClassifier
+#   - Find best 'n' models on validation set using AutoML
+#   - Assign best models to shards randomly
+#   - Prediction and Unlearning like AMMRVanillaShardedClassifier
+class AMMRVSRandomVanillaShardedClassifier(AMMRVanillaShardedClassifier):
+
+    def __init__(self, num_shards=1):
+        ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=30,
+                                                                        ensemble_size=num_shards,
+                                                                        include_preprocessors=['no_preprocessing'])
+        super().__init__(num_shards, ml_algorithm)
+        self.X_val = None
+        self.y_val = None
+
+    def fit(self, X_train, y_train, X_val, y_val):
+        self.X_train = copy.deepcopy(X_train)
+        self.y_train = copy.deepcopy(y_train)
+        self.default_class = Counter(y_train).most_common(1)[0][0]
+        self.X_val = copy.deepcopy(X_val)
+        self.y_val = copy.deepcopy(y_val)
+        self.initialize_bookkeeping_dicts()
+        # Initialize shards with dummy classifiers
+        for shard_i in self.shard_data_dict:
+            self.shard_model_dict[shard_i] = self.DummyClassifier(prediction=self.default_class)
+        # Find best models based on validation set
+        best_models = self.ml_algorithm.fit(self.X_val, self.y_val).get_models_with_weights()
+        # Assign best models to shards
+        for i in range(len(best_models)):
+            self.shard_model_dict[i] = best_models[i][1].fit(self.X_train[self.shard_data_dict[i]],
+                                                             self.y_train[self.shard_data_dict[i]])
