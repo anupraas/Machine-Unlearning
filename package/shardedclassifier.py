@@ -239,18 +239,16 @@ class AMMRVSRandomVanillaShardedClassifier(AMMRVanillaShardedClassifier):
         self.X_val = None
         self.y_val = None
 
-    def fit(self, X_train, y_train, X_val, y_val):
+    def fit(self, X_train, y_train):
         self.X_train = copy.deepcopy(X_train)
         self.y_train = copy.deepcopy(y_train)
         self.default_class = Counter(y_train).most_common(1)[0][0]
-        self.X_val = copy.deepcopy(X_val)
-        self.y_val = copy.deepcopy(y_val)
         self.initialize_bookkeeping_dicts()
         # Initialize shards with dummy classifiers
         for shard_i in self.shard_data_dict:
             self.shard_model_dict[shard_i] = self.DummyClassifier(prediction=self.default_class)
         # Find best models based on validation set
-        best_models = self.ml_algorithm.fit(self.X_val, self.y_val).get_models_with_weights()
+        best_models = self.ml_algorithm.fit(self.X_train, self.y_train).get_models_with_weights()
         # Assign best models to shards
         for i in range(len(best_models)):
             self.shard_model_dict[i] = best_models[i][1].fit(self.X_train[self.shard_data_dict[i]],
