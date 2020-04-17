@@ -219,7 +219,7 @@ class AMMREnsembleShardedClassifier(AMMRVanillaShardedClassifier, EnsembleSharde
 class AMMRVSRandomVanillaShardedClassifier(AMMRVanillaShardedClassifier):
 
     def __init__(self, num_shards=1):
-        ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=30,
+        ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=180,
                                                                         ensemble_size=num_shards,
                                                                         include_preprocessors=['no_preprocessing'])
         super().__init__(num_shards, ml_algorithm)
