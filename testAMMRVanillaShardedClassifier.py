@@ -14,7 +14,7 @@ unlearn_sequence = np.asarray(range(len(X_train)))
 np.random.shuffle(unlearn_sequence)
 
 sharded_results = []
-sharded_learner = shardedclassifier.AMMRVanillaShardedClassifier(number_of_shards, MLAs[mla_i])
+sharded_learner = shardedclassifier.AMMRVanillaShardedClassifier(number_of_shards)
 sharded_learner.fit(X_train, y_train)
 predicted = sharded_learner.predict(X_test)
 initial_accuracy = metrics.accuracy_score(y_test, predicted)
