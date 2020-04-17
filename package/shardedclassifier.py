@@ -105,6 +105,9 @@ class VanillaShardedClassifier:
         def __init__(self, prediction):
             self.prediction = prediction
 
+        def fit(self, X, y):
+            pass
+
         def predict(self, X):
             return [self.prediction] * len(X)
 
