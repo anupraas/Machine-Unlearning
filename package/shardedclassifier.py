@@ -48,9 +48,11 @@ class VanillaShardedClassifier:
         self.y_train = copy.deepcopy(y)
         self.default_class = Counter(y).most_common(1)[0][0]
         self.initialize_bookkeeping_dicts()
+        for shard_i in range(self.num_shards):
+            self.shard_model_dict[shard_i] = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
         for shard_num in self.shard_data_dict:
-            self.shard_model_dict[shard_num] = self.fit_shard(self.X_train[self.shard_data_dict[shard_num]],
-                                                              self.y_train[self.shard_data_dict[shard_num]])
+            self.shard_model_dict[shard_num] = self.ml_algorithm.fit(self.X_train[self.shard_data_dict[shard_num]],
+                                                                     self.y_train[self.shard_data_dict[shard_num]])
 
     # Prediction - vanilla implementation: taking simple majority vote
     def predict(self, X):
@@ -68,21 +70,17 @@ class VanillaShardedClassifier:
         for i in range(len(X_y_ids)):
             self.shard_data_dict[shard_num[i]].remove(X_y_ids[i])
             self.cur_train_ids.remove(X_y_ids[i])
+        self.default_class = Counter(self.y[self.cur_train_ids]).most_common(1)[0][0]
         self.refit_shards(list(set(shard_num)))
 
     # Refitting shards after unlearning - vanilla implementation: call fit() for every shard's model
     def refit_shards(self, shard_num):
         for shard_i in shard_num:
-            self.shard_model_dict[shard_i] = self.fit_shard(self.X_train[self.shard_data_dict[shard_i]],
-                                                            self.y_train[self.shard_data_dict[shard_i]])
-
-    def fit_shard(self, X, y):
-        if len(X) is 0:
-            return self.DummyClassifier(prediction=self.default_class)
-        elif len(Counter(y).keys()) is 1:
-            return self.DummyClassifier(prediction=y[0])
-        else:
-            return self.ml_algorithm.fit(X, y)
+            self.shard_model_dict[shard_i] = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
+        for shard_i in shard_num:
+            if self.shard_model_dict[shard_i] is None:
+                self.shard_model_dict[shard_i] = self.ml_algorithm.fit(self.X_train[self.shard_data_dict[shard_i]],
+                                                                       self.y_train[self.shard_data_dict[shard_i]])
 
     #   Creates class-balanced separations of training data and assigns to each shard
     def initialize_bookkeeping_dicts(self):
@@ -98,6 +96,13 @@ class VanillaShardedClassifier:
 
     def getShardNum(self, idx):
         return [self.data_to_shard_dict[id_i] for id_i in idx]
+
+    def checkForDummy(self, shard_i, y):
+        if len(y) is 0:
+            return self.DummyClassifier(prediction=self.default_class)
+        elif len(Counter(y).keys()) is 1:
+            return self.DummyClassifier(prediction=y[0])
+        return None
 
     class DummyClassifier:
         prediction = 0
@@ -142,7 +147,8 @@ class AMMRVanillaShardedClassifier(VanillaShardedClassifier):
 
     def __init__(self, num_shards=1, ml_algorithm=None):
         if ml_algorithm is None:
-            ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=30, ensemble_size=1, include_preprocessors=['no_preprocessing'])
+            ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=30, ensemble_size=1,
+                                                                            include_preprocessors=['no_preprocessing'])
         elif not isinstance(ml_algorithm, autosklearn.estimators.AutoSklearnClassifier):
             raise ValueError('This classifier is only valid for '
                              'ml_algorithm=autosklearn.estimators.AutoSklearnClassifier.')
@@ -155,9 +161,12 @@ class AMMRVanillaShardedClassifier(VanillaShardedClassifier):
 
     def refit_shards(self, shard_num):
         for shard_i in shard_num:
-            self.shard_model_dict[shard_i] = self.shard_model_dict[shard_i].fit(
-                self.X_train[self.shard_data_dict[shard_i]],
-                self.y_train[self.shard_data_dict[shard_i]])
+            self.shard_model_dict[shard_i] = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
+        for shard_i in shard_num:
+            if self.shard_model_dict[shard_i] is None:
+                self.shard_model_dict[shard_i] = self.shard_model_dict[shard_i].fit(
+                    self.X_train[self.shard_data_dict[shard_i]],
+                    self.y_train[self.shard_data_dict[shard_i]])
 
 
 #   AutoML-Model-Reuse-Ensemble-ShardedClassifier: Extends AMMRVanillaShardedClassifier and EnsembleShardedClassifier
