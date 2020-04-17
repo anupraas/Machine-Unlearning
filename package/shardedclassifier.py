@@ -201,4 +201,8 @@ class AMMRVanillaShardedClassifier(VanillaShardedClassifier):
 # obj.predict()
 # obj.unlearn()
 class AMMREnsembleShardedClassifier(AMMRVanillaShardedClassifier, EnsembleShardedClassifier):
-    pass
+
+    def fit(self, X, y):
+        AMMRVanillaShardedClassifier.fit(X, y)
+        self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
+            list(self.shard_model_dict.values()), self.X_train, self.y_train)
