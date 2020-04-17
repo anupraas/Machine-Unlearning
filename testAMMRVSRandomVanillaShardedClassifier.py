@@ -5,18 +5,18 @@ from package import shardedclassifier
 import autosklearn.classification
 
 
-number_of_shards = 3
+number_of_shards = 10
 X, y = datasets.load_digits(return_X_y=True)
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True)
-X_train, X_val, y_train, y_val = model_selection.train_test_split(X_train, y_train, test_size=0.2, shuffle=True)
 unlearned_fraction = np.asarray([0, 2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99])
+unlearned_fraction = unlearned_fraction/10
 unlearn_counts = (np.rint((unlearned_fraction / 100) * len(X_train))).astype(int)
 unlearn_sequence = np.asarray(range(len(X_train)))
 np.random.shuffle(unlearn_sequence)
 
 sharded_results = []
 sharded_learner = shardedclassifier.AMMRVSRandomVanillaShardedClassifier(number_of_shards)
-sharded_learner.fit(X_train, y_train, X_val, y_val)
+sharded_learner.fit(X_train, y_train)
 predicted = sharded_learner.predict(X_test)
 initial_accuracy = metrics.accuracy_score(y_test, predicted)
 sharded_results.append(initial_accuracy)
