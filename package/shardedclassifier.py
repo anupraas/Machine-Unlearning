@@ -138,10 +138,17 @@ class EnsembleShardedClassifier(VanillaShardedClassifier):
 class AMMRVanillaShardedClassifier(VanillaShardedClassifier):
 
     def __init__(self, num_shards=1, ml_algorithm=None):
-        if not isinstance(ml_algorithm, autosklearn.estimators.AutoSklearnClassifier):
+        if ml_algorithm is None:
+            ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=30, ensemble_size=1, include_preprocessors=['no_preprocessing'])
+        elif not isinstance(ml_algorithm, autosklearn.estimators.AutoSklearnClassifier):
             raise ValueError('This classifier is only valid for '
                              'ml_algorithm=autosklearn.estimators.AutoSklearnClassifier.')
         super().__init__(num_shards, ml_algorithm)
+
+    def fit(self, X, y):
+        super().fit(X, y)
+        for shard_i in range(self.num_shards):
+            self.shard_model_dict[shard_i] = self.shard_model_dict[shard_i].get_models_with_weights()[0][1]
 
     def refit_shards(self, shard_num):
         for shard_i in shard_num:
