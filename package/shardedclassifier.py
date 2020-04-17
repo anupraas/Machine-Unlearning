@@ -70,7 +70,7 @@ class VanillaShardedClassifier:
         for i in range(len(X_y_ids)):
             self.shard_data_dict[shard_num[i]].remove(X_y_ids[i])
             self.cur_train_ids.remove(X_y_ids[i])
-        self.default_class = Counter(self.y[self.cur_train_ids]).most_common(1)[0][0]
+        self.default_class = Counter(self.y_train[self.cur_train_ids]).most_common(1)[0][0]
         self.refit_shards(list(set(shard_num)))
 
     # Refitting shards after unlearning - vanilla implementation: call fit() for every shard's model
