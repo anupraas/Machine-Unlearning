@@ -4,6 +4,7 @@ import numpy as np
 import copy
 from mlxtend.classifier import EnsembleVoteClassifier
 from sklearn.dummy import DummyClassifier
+from package import modelwrapper as mw
 
 
 class AutoShardedClassifier:
@@ -15,13 +16,12 @@ class AutoShardedClassifier:
         self.y_train = None
         self.shard_data_dict = {}
         self.shard_model_dict = {}
-        self.shard_model_weight_dict = None
+        self.shard_model_weight_dict = {}
         self.data_to_shard_dict = {}
         self.cur_train_ids = []
         self.default_class = None
         self.ensemble = None
         self.num_classes = None
-        self.wrapped_ens_models = None
 
     def fit(self, X, y):
         self.X_train = copy.deepcopy(X)
@@ -42,17 +42,14 @@ class AutoShardedClassifier:
         best_models = [best_models_ensemble[i][1] for i in range(self.num_shards)]
         best_model_wts = np.asarray([best_models_ensemble[i][0] for i in range(self.num_shards)])
         best_model_wts = best_model_wts / np.sum(best_model_wts)
-        self.shard_model_dict = {i: best_models[i] for i in range(self.num_shards)}
-        self.shard_model_weight_dict = {i: best_model_wts[i] for i in range(self.num_shards)}
         # Fit shards
-        for shard_num in self.shard_data_dict:
+        for shard_num in range(self.num_shards):
+            self.shard_model_dict[shard_num] = mw.modelWrapper(best_models[shard_num], self.num_classes)
             self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
                                                  self.y_train[self.shard_data_dict[shard_num]])
-        self.wrapped_ens_models = [self.modelWrapper(self.shard_model_dict[i], self.num_classes,
-                                                list(set(self.y_train[self.shard_data_dict[i]]))) for i in
-                              range(self.num_shards)]
+            self.shard_model_weight_dict[shard_num] = best_model_wts[shard_num]
         # Create ensemble
-        self.ensemble = EnsembleVoteClassifier(clfs=self.wrapped_ens_models,
+        self.ensemble = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()),
                                                voting='soft',
                                                weights=list(self.shard_model_weight_dict.values()),
                                                refit=False)
@@ -73,21 +70,14 @@ class AutoShardedClassifier:
                                                             self.y_train[self.shard_data_dict[shard_i]])
             if isDummy:
                 print("dummy created")
-                self.shard_model_dict[shard_i] = dummy_model
-                self.shard_model_dict[shard_i].fit(self.X_train[self.cur_train_ids],
-                                                   self.y_train[self.cur_train_ids])
-                self.wrapped_ens_models[shard_i] = self.modelWrapper(self.shard_model_dict[shard_i],
-                                                                     self.num_classes,
-                                                                     [pred])
+                # dummy fit just to handle errors
+                dummy_model.fit(self.X_train[self.cur_train_ids], self.y_train[self.cur_train_ids])
+                self.shard_model_dict[shard_i] = mw.modelWrapper(dummy_model, self.num_classes, [pred])
             else:
                 self.shard_model_dict[shard_i].fit(self.X_train[self.shard_data_dict[shard_i]],
                                                    self.y_train[self.shard_data_dict[shard_i]])
-                self.wrapped_ens_models[shard_i] = self.modelWrapper(self.shard_model_dict[shard_i],
-                                                                     self.num_classes,
-                                                                     list(set(
-                                                                         self.y_train[self.shard_data_dict[shard_i]])))
         # Create ensemble
-        self.ensemble = EnsembleVoteClassifier(clfs=self.wrapped_ens_models,
+        self.ensemble = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()),
                                                voting='soft',
                                                weights=list(self.shard_model_weight_dict.values()),
                                                refit=False)
@@ -112,21 +102,3 @@ class AutoShardedClassifier:
         elif len(Counter(y).keys()) is 1:
             return True, DummyClassifier(strategy="constant", constant=y[0]), y[0]
         return False, None, None
-
-    class modelWrapper:
-
-        def __init__(self, model, num_classes, model_classes):
-            self.model = model
-            self.num_classes = num_classes
-            self.model_classes = model_classes
-
-        def predict(self, X):
-            return self.model.predict(X)
-
-        def predict_proba(self, X):
-            proba = np.zeros(shape=(len(X), self.num_classes))
-            mo_proba = self.model.predict_proba(X)
-            for i in range(len(X)):
-                for j in range(len(self.model_classes)):
-                    proba[i][self.model_classes[j]] = mo_proba[i][j]
-            return proba
