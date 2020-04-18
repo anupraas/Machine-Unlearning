@@ -21,6 +21,7 @@ class AutoShardedClassifier:
         self.default_class = None
         self.ensemble = None
         self.num_classes = None
+        self.wrapped_ens_models = None
 
     def fit(self, X, y):
         self.X_train = copy.deepcopy(X)
@@ -31,7 +32,7 @@ class AutoShardedClassifier:
         print(Counter(y).most_common()[-1][1])
         self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
         print(self.num_shards)
-        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=30,
+        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=180,
                                                                              ensemble_size=self.num_shards,
                                                                              include_preprocessors=['no_preprocessing'])
         best_models_ensemble = self.ml_algorithm.fit(self.X_train, self.y_train).get_models_with_weights()
@@ -47,11 +48,11 @@ class AutoShardedClassifier:
         for shard_num in self.shard_data_dict:
             self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
                                                  self.y_train[self.shard_data_dict[shard_num]])
-        wrapped_ens_models = [self.modelWrapper(self.shard_model_dict[i], self.num_classes,
+        self.wrapped_ens_models = [self.modelWrapper(self.shard_model_dict[i], self.num_classes,
                                                 list(set(self.y_train[self.shard_data_dict[i]]))) for i in
-                                                range(self.num_shards)]
+                              range(self.num_shards)]
         # Create ensemble
-        self.ensemble = EnsembleVoteClassifier(clfs=wrapped_ens_models,
+        self.ensemble = EnsembleVoteClassifier(clfs=self.wrapped_ens_models,
                                                voting='soft',
                                                weights=list(self.shard_model_weight_dict.values()),
                                                refit=False)
@@ -67,7 +68,6 @@ class AutoShardedClassifier:
             self.cur_train_ids.remove(X_y_ids[i])
         self.default_class = Counter(self.y_train[self.cur_train_ids]).most_common(1)[0][0]
         # Refitting shards after unlearning - vanilla implementation: call fit() for every shard's model
-        wrapped_ens_models = []
         for shard_i in list(set(shard_num)):
             isDummy, dummy_model, pred = self.checkForDummy(self.X_train[self.shard_data_dict[shard_i]],
                                                             self.y_train[self.shard_data_dict[shard_i]])
@@ -76,17 +76,18 @@ class AutoShardedClassifier:
                 self.shard_model_dict[shard_i] = dummy_model
                 self.shard_model_dict[shard_i].fit(self.X_train[self.cur_train_ids],
                                                    self.y_train[self.cur_train_ids])
-                wrapped_ens_models.append(self.modelWrapper(self.shard_model_dict[shard_i],
-                                                            self.num_classes,
-                                                            [pred]))
+                self.wrapped_ens_models[shard_i] = self.modelWrapper(self.shard_model_dict[shard_i],
+                                                                     self.num_classes,
+                                                                     [pred])
             else:
                 self.shard_model_dict[shard_i].fit(self.X_train[self.shard_data_dict[shard_i]],
                                                    self.y_train[self.shard_data_dict[shard_i]])
-                wrapped_ens_models.append(self.modelWrapper(self.shard_model_dict[shard_i],
-                                                            self.num_classes,
-                                                            list(set(self.y_train[self.shard_data_dict[shard_i]]))))
+                self.wrapped_ens_models[shard_i] = self.modelWrapper(self.shard_model_dict[shard_i],
+                                                                     self.num_classes,
+                                                                     list(set(
+                                                                         self.y_train[self.shard_data_dict[shard_i]])))
         # Create ensemble
-        self.ensemble = EnsembleVoteClassifier(clfs=wrapped_ens_models,
+        self.ensemble = EnsembleVoteClassifier(clfs=self.wrapped_ens_models,
                                                voting='soft',
                                                weights=list(self.shard_model_weight_dict.values()),
                                                refit=False)
