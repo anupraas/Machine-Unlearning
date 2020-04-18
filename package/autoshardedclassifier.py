@@ -85,8 +85,6 @@ class AutoShardedClassifier:
                 wrapped_ens_models.append(self.modelWrapper(self.shard_model_dict[shard_i],
                                                             self.num_classes,
                                                             list(set(self.y_train[self.shard_data_dict[shard_i]]))))
-        wrapped_ens_models = [self.modelWrapper(self.shard_model_dict[i], self.num_classes) for i in
-                              range(self.num_shards)]
         # Create ensemble
         self.ensemble = EnsembleVoteClassifier(clfs=wrapped_ens_models,
                                                voting='soft',
@@ -119,7 +117,7 @@ class AutoShardedClassifier:
         def __init__(self, model, num_classes, model_classes):
             self.model = model
             self.num_classes = num_classes
-            self.model_classes = model_classes.sort()
+            self.model_classes = model_classes
 
         def predict(self, X):
             return self.model.predict(X)
