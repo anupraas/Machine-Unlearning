@@ -20,8 +20,10 @@ class modelWrapper:
         return self.model.predict(X)
 
     def predict_proba(self, X):
-        proba = np.zeros(shape=(len(X), self.num_classes))
         mo_proba = self.model.predict_proba(X)
+        if self.model_classes == self.num_classes:
+            return mo_proba
+        proba = np.zeros(shape=(len(X), self.num_classes))
         for i in range(len(X)):
             for j in range(len(self.model_classes)):
                 proba[i][self.model_classes[j]] = mo_proba[i][j]
