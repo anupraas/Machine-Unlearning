@@ -1,11 +1,12 @@
 from mlxtend.classifier import EnsembleVoteClassifier
 from sklearn import metrics
 import copy
+from numpy import inf
 
 
 class EnsembleSelectionClassifier:
 
-    def __init__(self, epsilon=0.1, maxIter=10):
+    def __init__(self, epsilon=0.01, maxIter=inf):
         self.epsilon = epsilon
         self.max_iter = maxIter
 
@@ -15,6 +16,7 @@ class EnsembleSelectionClassifier:
         cur_weights = [0] * len(models)
         cur_accuracy = 0
         it = 0
+        cur_ensemble = None
         while True:
             candidates = []
             it += 1
