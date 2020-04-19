@@ -4,12 +4,12 @@ import numpy as np
 import copy
 from mlxtend.classifier import EnsembleVoteClassifier
 from sklearn.dummy import DummyClassifier
-from package import modelwrapper as mw
+from package import modelwrapper as mw, ensembleselection as es
 
 
 class AutoShardedClassifier:
 
-    def __init__(self, num_shards=np.inf):
+    def __init__(self, num_shards=np.inf, ensemble_strategy=1):
         self.ml_algorithm = None
         self.num_shards = num_shards
         self.X_train = None
@@ -22,11 +22,18 @@ class AutoShardedClassifier:
         self.default_class = None
         self.ensemble = None
         self.num_classes = None
+        if ensemble_strategy not in [1,2,3]:
+            ensemble_strategy=1
+        self.ensemble_strategy = ensemble_strategy
+        self.X_dummy = None
+        self.y_dummy = None
 
     def fit(self, X, y):
         self.X_train = copy.deepcopy(X)
         self.y_train = copy.deepcopy(y)
         self.num_classes = len(set(self.y_train))
+        self.X_dummy = np.zeros(shape=(self.num_classes, len(X[0])))
+        self.y_dummy = np.asarray(list(range(self.num_classes)))
         self.default_class = Counter(y).most_common(1)[0][0]
         print(self.num_shards)
         print(Counter(y).most_common()[-1][1])
@@ -49,11 +56,7 @@ class AutoShardedClassifier:
                                                  self.y_train[self.shard_data_dict[shard_num]])
             self.shard_model_weight_dict[shard_num] = best_model_wts[shard_num]
         # Create ensemble
-        self.ensemble = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()),
-                                               voting='soft',
-                                               weights=list(self.shard_model_weight_dict.values()),
-                                               refit=False)
-        self.ensemble.fit(self.X_train[self.cur_train_ids], self.y_train[self.cur_train_ids])
+        self.create_ensemble()
 
     def predict(self, X):
         return self.ensemble.predict(X)
@@ -77,11 +80,7 @@ class AutoShardedClassifier:
                 self.shard_model_dict[shard_i].fit(self.X_train[self.shard_data_dict[shard_i]],
                                                    self.y_train[self.shard_data_dict[shard_i]])
         # Create ensemble
-        self.ensemble = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()),
-                                               voting='soft',
-                                               weights=list(self.shard_model_weight_dict.values()),
-                                               refit=False)
-        self.ensemble.fit(self.X_train[self.cur_train_ids], self.y_train[self.cur_train_ids])
+        self.create_ensemble()
 
     def create_training_subsets_for_shards(self):
         y = self.y_train
@@ -92,6 +91,21 @@ class AutoShardedClassifier:
             self.data_to_shard_dict[it] = manager[y[it]]
             manager[y[it]] = (manager[y[it]] + 1) % self.num_shards
         self.cur_train_ids = list(range(len(y)))
+
+    def create_ensemble(self):
+        if self.ensemble_strategy is 1:
+            self.ensemble = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()),
+                                                   voting='soft',
+                                                   weights=list(self.shard_model_weight_dict.values()),
+                                                   refit=False)
+            # self.ensemble.fit(self.X_train[self.cur_train_ids], self.y_train[self.cur_train_ids])
+            self.ensemble.fit(self.X_dummy, self.y_dummy)
+        elif self.ensemble_strategy is 2:
+            self.ensemble = es.EnsembleSelectionClassifier(maxIter=np.inf).getEnsemble(
+                models=list(self.shard_model_dict.values()),
+                X=self.X_train[self.cur_train_ids],
+                y=self.y_train[self.cur_train_ids])
+            self.ensemble.fit(self.X_dummy, self.y_dummy)
 
     def getShardNum(self, idx):
         return [self.data_to_shard_dict[id_i] for id_i in idx]
