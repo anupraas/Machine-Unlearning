@@ -80,8 +80,7 @@ class AutoShardedClassifier:
         self.default_class = Counter(self.y_train[self.cur_train_ids]).most_common(1)[0][0]
         # Refitting shards after unlearning - vanilla implementation: call fit() for every shard's model
         for shard_i in list(set(shard_num)):
-            isDummy, dummy_model, pred = self.checkForDummy(self.X_train[self.shard_data_dict[shard_i]],
-                                                            self.y_train[self.shard_data_dict[shard_i]])
+            isDummy, dummy_model, pred = self.checkForDummy(self.y_train[self.shard_data_dict[shard_i]])
             if isDummy:
                 print("dummy created")
                 # dummy fit just to handle errors
@@ -158,7 +157,7 @@ class AutoShardedClassifier:
     def getShardNum(self, idx):
         return [self.data_to_shard_dict[id_i] for id_i in idx]
 
-    def checkForDummy(self, X, y):
+    def checkForDummy(self, y):
         if len(y) is 0:
             return True, DummyClassifier(strategy="constant", constant=self.default_class), self.default_class
         elif len(Counter(y).keys()) is 1:
