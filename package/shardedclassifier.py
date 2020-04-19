@@ -58,7 +58,7 @@ class VanillaShardedClassifier:
         self.X_dummy = np.zeros(shape=(self.num_classes, len(X[0])))
         self.y_dummy = np.asarray(list(range(self.num_classes)))
         self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
-        self.initialize_bookkeeping_dicts()
+        self.initialize_bookkeeping_dicts2()
         for shard_num in self.shard_model_dict:
             self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
                                                  self.y_train[self.shard_data_dict[shard_num]])
@@ -100,6 +100,18 @@ class VanillaShardedClassifier:
             self.shard_data_dict[manager[y[it]]].append(it)
             self.data_to_shard_dict[it] = manager[y[it]]
             manager[y[it]] = (manager[y[it]] + 1) % self.num_shards
+        self.shard_model_dict = {sh_num: mw.modelWrapper(model=self.ml_algorithm, num_classes=self.num_classes)
+                                 for sh_num in range(self.num_shards)}
+        self.cur_train_ids = list(range(len(y)))
+
+    def initialize_bookkeeping_dicts2(self):
+        y = self.y_train
+        self.shard_data_dict = {sh_num: [] for sh_num in range(self.num_shards)}
+        cur_shard = 0
+        for i in range(len(y)):
+            self.shard_data_dict[cur_shard].append(i)
+            self.data_to_shard_dict[i] = cur_shard
+            cur_shard = (cur_shard+1) % self.num_shards
         self.shard_model_dict = {sh_num: mw.modelWrapper(model=self.ml_algorithm, num_classes=self.num_classes)
                                  for sh_num in range(self.num_shards)}
         self.cur_train_ids = list(range(len(y)))
