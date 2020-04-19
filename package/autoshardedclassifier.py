@@ -46,15 +46,12 @@ class AutoShardedClassifier:
         self.num_shards = min(self.num_shards, len(best_models_ensemble))
         print(self.num_shards)
         self.create_training_subsets_for_shards()
-        best_models = [best_models_ensemble[i][1] for i in range(self.num_shards)]
-        best_model_wts = np.asarray([best_models_ensemble[i][0] for i in range(self.num_shards)])
-        best_model_wts = best_model_wts / np.sum(best_model_wts)
         # Fit shards
         for shard_num in range(self.num_shards):
-            self.shard_model_dict[shard_num] = mw.modelWrapper(best_models[shard_num], self.num_classes)
+            self.shard_model_dict[shard_num] = mw.modelWrapper(best_models_ensemble[shard_num][1], self.num_classes)
             self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
                                                  self.y_train[self.shard_data_dict[shard_num]])
-            self.shard_model_weight_dict[shard_num] = best_model_wts[shard_num]
+            self.shard_model_weight_dict[shard_num] = best_models_ensemble[shard_num][0]
         # Create ensemble
         self.create_ensemble()
 
