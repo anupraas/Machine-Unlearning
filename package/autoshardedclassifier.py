@@ -39,19 +39,23 @@ class AutoShardedClassifier:
         print(Counter(y).most_common()[-1][1])
         self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
         print(self.num_shards)
-        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=180,
+        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=300,
                                                                              ensemble_size=self.num_shards,
                                                                              include_preprocessors=['no_preprocessing'])
         best_models_ensemble = self.ml_algorithm.fit(self.X_train, self.y_train).get_models_with_weights()
-        self.num_shards = min(self.num_shards, len(best_models_ensemble))
-        print(self.num_shards)
         self.create_training_subsets_for_shards()
-        # Fit shards
-        for shard_num in range(self.num_shards):
-            self.shard_model_dict[shard_num] = mw.modelWrapper(best_models_ensemble[shard_num][1], self.num_classes)
-            self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
-                                                 self.y_train[self.shard_data_dict[shard_num]])
-            self.shard_model_weight_dict[shard_num] = best_models_ensemble[shard_num][0]
+        shards_model_assignment_sequence = list(range(self.num_shards))
+        shards_model_assignment_sequence_idx = 0
+        for i in range(len(best_models_ensemble)):
+            num_cur_model_shards = int(self.num_shards*best_models_ensemble[i][0])
+            for j in range(num_cur_model_shards):
+                shard_num = shards_model_assignment_sequence[shards_model_assignment_sequence_idx]
+                self.shard_model_dict[shard_num] = mw.modelWrapper(best_models_ensemble[i][1], self.num_classes)
+                self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
+                                                     self.y_train[self.shard_data_dict[shard_num]])
+                self.shard_model_weight_dict[shard_num] = 1
+                shards_model_assignment_sequence_idx += 1
+
         # Create ensemble
         self.create_ensemble()
 
@@ -71,8 +75,8 @@ class AutoShardedClassifier:
             if isDummy:
                 print("dummy created")
                 # dummy fit just to handle errors
-                dummy_model.fit(self.X_train[self.cur_train_ids], self.y_train[self.cur_train_ids])
-                self.shard_model_dict[shard_i] = mw.modelWrapper(dummy_model, self.num_classes, [pred])
+                self.shard_model_dict[shard_i] = mw.modelWrapper(dummy_model, self.num_classes)
+                self.shard_model_dict[shard_i].fit(self.X_dummy, self.y_dummy)
             else:
                 self.shard_model_dict[shard_i].fit(self.X_train[self.shard_data_dict[shard_i]],
                                                    self.y_train[self.shard_data_dict[shard_i]])
@@ -103,6 +107,17 @@ class AutoShardedClassifier:
                 X=self.X_train[self.cur_train_ids],
                 y=self.y_train[self.cur_train_ids])
             self.ensemble.fit(self.X_dummy, self.y_dummy)
+        else:
+            self.ensemble, new_weights = es.EnsembleSelectionClassifier(maxIter=np.inf).getEnsemble(
+                models=list(self.shard_model_dict.values()),
+                X=self.X_train[self.cur_train_ids],
+                y=self.y_train[self.cur_train_ids],
+                initial_weights=list(self.shard_model_weight_dict.values()),
+                ret_weights=True)
+            self.ensemble.fit(self.X_dummy, self.y_dummy)
+            # now update weights
+            for i in range(self.num_shards):
+                self.shard_model_weight_dict[i] = new_weights[i]
 
     def getShardNum(self, idx):
         return [self.data_to_shard_dict[id_i] for id_i in idx]

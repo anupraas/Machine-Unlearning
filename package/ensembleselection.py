@@ -12,8 +12,12 @@ class EnsembleSelectionClassifier:
 
     # Expects a list of "wrapped" models in "models" and a validation set in "X", "y".
     # Returns an ensemble
-    def getEnsemble(self, models, X, y, ret_weights=False):
-        cur_weights = [0] * len(models)
+    def getEnsemble(self, models, X, y, initial_weights=None, ret_weights=False):
+        if initial_weights is None:
+            cur_weights = [0] * len(models)
+        else:
+            min_wt = min(initial_weights)
+            cur_weights = [initial_weights[i]/min_wt for i in range(len(initial_weights))]
         cur_accuracy = 0
         it = 0
         cur_ensemble = None
