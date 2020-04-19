@@ -43,6 +43,8 @@ class AutoShardedClassifier:
         print(self.num_shards)
         self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=300,
                                                                              ensemble_size=self.num_shards,
+                                                                             ensemble_nbest=self.num_shards,
+                                                                             ensemble_memory_limit=4096,
                                                                              include_preprocessors=['no_preprocessing'])
         best_models_ensemble = self.ml_algorithm.fit(self.X_train, self.y_train).get_models_with_weights()
         self.create_training_subsets_for_shards()
