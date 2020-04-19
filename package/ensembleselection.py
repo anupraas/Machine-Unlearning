@@ -6,14 +6,14 @@ from numpy import inf
 
 class EnsembleSelectionClassifier:
 
-    def __init__(self, epsilon=0.005, maxIter=inf):
+    def __init__(self, epsilon=0.0001, maxIter=inf):
         self.epsilon = epsilon
         self.max_iter = maxIter
 
     # Expects a list of "wrapped" models in "models" and a validation set in "X", "y".
     # Returns an ensemble
     def getEnsemble(self, models, X, y, initial_weights=None, ret_weights=False):
-        if initial_weights is None:
+        if initial_weights is None or sum(initial_weights) is 0:
             cur_weights = [0] * len(models)
             cur_accuracy = 0
             cur_ensemble = None
