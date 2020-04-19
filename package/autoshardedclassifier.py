@@ -134,7 +134,7 @@ class AutoShardedClassifier:
     def create_all_ensembles(self):
         self.all_ensembles[0] = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()),
                                                        voting='soft',
-                                                       weights=list(self.shard_model_weight_dict.values()),
+                                                       weights=[1] * self.num_shards,
                                                        refit=False)
         self.all_ensembles[0].fit(self.X_dummy, self.y_dummy)
 
