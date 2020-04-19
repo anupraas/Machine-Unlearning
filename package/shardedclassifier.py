@@ -1,8 +1,10 @@
 import copy
 import numpy as np
 from collections import Counter
-from package import ensembleselection
+from package import ensembleselection, modelwrapper as mw
 import autosklearn.classification
+from mlxtend.classifier import EnsembleVoteClassifier
+from sklearn.dummy import DummyClassifier
 
 
 #   VanillaShardedClassifier:
@@ -43,27 +45,29 @@ class VanillaShardedClassifier:
         # Default prediction in case of 0 points in training set
         self.default_class = None
 
+        self.num_classes = None
+        self.X_dummy = None
+        self.y_dummy = None
+        self.eclf = None
+
     def fit(self, X, y):
         self.X_train = copy.deepcopy(X)
         self.y_train = copy.deepcopy(y)
         self.default_class = Counter(y).most_common(1)[0][0]
+        self.num_classes = len(set(self.y_train))
+        self.X_dummy = np.zeros(shape=(self.num_classes, len(X[0])))
+        self.y_dummy = np.asarray(list(range(self.num_classes)))
+        self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
         self.initialize_bookkeeping_dicts()
-        for shard_num in self.shard_data_dict:
-            dummy, pred = self.checkForDummy(shard_num, self.y_train[self.shard_data_dict[shard_num]])
-            if dummy:
-                self.shard_model_dict[shard_num] = self.DummyClassifier(prediction=pred)
-            else:
-                self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
-                                                     self.y_train[self.shard_data_dict[shard_num]])
+        for shard_num in self.shard_model_dict:
+            self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
+                                                 self.y_train[self.shard_data_dict[shard_num]])
+        self.eclf = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()), weights=[1]*self.num_shards, voting='hard', refit=False)
+        self.eclf.fit(self.X_dummy, self.y_dummy)
 
     # Prediction - vanilla implementation: taking simple majority vote
     def predict(self, X):
-        predictions = []
-        for m in self.shard_model_dict:
-            predictions.append(self.shard_model_dict[m].predict(X))
-        predictions = np.asarray(predictions)
-        ret_predictions = [Counter(predictions[:, i]).most_common(1)[0][0] for i in range(len(X))]
-        return ret_predictions
+        return self.eclf.predict(X)
 
     # Unlearning - vanilla implementation: remove point and refit model
     #               (in case of auto sklearn refit causes rediscovery with bayesian optimizer)
@@ -75,12 +79,17 @@ class VanillaShardedClassifier:
         self.default_class = Counter(self.y_train[self.cur_train_ids]).most_common(1)[0][0]
         # Refitting shards after unlearning - vanilla implementation: call fit() for every shard's model
         for shard_i in list(set(shard_num)):
-            dummy, pred = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
-            if dummy:
-                self.shard_model_dict[shard_i] = self.DummyClassifier(prediction=pred)
+            isdummy, dummy, pred = self.checkForDummy(shard_i, self.y_train[self.shard_data_dict[shard_i]])
+            if isdummy:
+                print("dummy created")
+                # dummy fit just to handle errors
+                self.shard_model_dict[shard_i] = mw.modelWrapper(dummy, self.num_classes)
+                self.shard_model_dict[shard_i].fit(self.X_dummy, self.y_dummy)
             else:
                 self.shard_model_dict[shard_i].fit(self.X_train[self.shard_data_dict[shard_i]],
                                                    self.y_train[self.shard_data_dict[shard_i]])
+        self.eclf = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()), weights=[1]*self.num_shards, voting='hard', refit=False)
+        self.eclf.fit(self.X_dummy, self.y_dummy)
 
     #   Creates class-balanced separations of training data and assigns to each shard
     def initialize_bookkeeping_dicts(self):
@@ -91,30 +100,19 @@ class VanillaShardedClassifier:
             self.shard_data_dict[manager[y[it]]].append(it)
             self.data_to_shard_dict[it] = manager[y[it]]
             manager[y[it]] = (manager[y[it]] + 1) % self.num_shards
-        self.shard_model_dict = {sh_num: self.ml_algorithm for sh_num in range(self.num_shards)}
+        self.shard_model_dict = {sh_num: mw.modelWrapper(model=self.ml_algorithm, num_classes=self.num_classes)
+                                 for sh_num in range(self.num_shards)}
         self.cur_train_ids = list(range(len(y)))
 
     def getShardNum(self, idx):
         return [self.data_to_shard_dict[id_i] for id_i in idx]
 
-    def checkForDummy(self, shard_i, y):
+    def checkForDummy(self, X, y):
         if len(y) is 0:
-            return True, self.default_class
+            return True, DummyClassifier(strategy="constant", constant=self.default_class), self.default_class
         elif len(Counter(y).keys()) is 1:
-            return True, y[0]
-        return False, -1
-
-    class DummyClassifier:
-        prediction = 0
-
-        def __init__(self, prediction):
-            self.prediction = prediction
-
-        def fit(self, X, y):
-            pass
-
-        def predict(self, X):
-            return [self.prediction] * len(X)
+            return True, DummyClassifier(strategy="constant", constant=y[0]), y[0]
+        return False, None, None
 
 
 #   EnsembleShardedClassifier: extends VanillaShardedClassifier:
