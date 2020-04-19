@@ -4,22 +4,25 @@ import numpy as np
 from package import autoshardedclassifier as asc
 from package import shardedclassifier as sc
 import autosklearn.classification
+from sklearn.ensemble import RandomForestClassifier
+
 
 max_number_of_shards = 140
 MLAs = [svm.SVC(gamma=0.001),
-        nn.MLPClassifier(solver='lbfgs')]
-MLA_labels = ['SVM', 'MLP', 'AutoShards']
+        nn.MLPClassifier(solver='lbfgs'),
+        RandomForestClassifier(n_estimators=5)]
+MLA_labels = ['AutoEnsAS', 'SVM', 'MLP', 'RF']
 X, y = datasets.load_digits(return_X_y=True)
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
-unlearned_fraction = np.asarray([2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99])
+unlearned_fraction = np.asarray([0, 2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99])
 unlearn_counts = (np.rint((unlearned_fraction / 100) * len(X_train))).astype(int)
 unlearn_sequence = np.asarray(range(len(X_train)))
+np.random.seed(0)
 np.random.shuffle(unlearn_sequence)
 
 ascsharded_results = []
-sharded_learner = asc.AutoShardedClassifier(max_number_of_shards)
+sharded_learner = asc.AutoShardedClassifier(max_number_of_shards, ensemble_strategy=1)
 sharded_learner.fit(X_train, y_train)
-benchmark_num_shards = sharded_learner.num_shards
 predicted = sharded_learner.predict(X_test)
 initial_accuracy = metrics.accuracy_score(y_test, predicted)
 ascsharded_results.append(initial_accuracy)
@@ -34,7 +37,8 @@ for i in range(1, len(unlearn_counts)):
     predicted = sharded_learner.predict(X_test)
     ascsharded_results.append(metrics.accuracy_score(y_test, predicted))
     print(ascsharded_results)
-shardedMLAs = [sc.VanillaShardedClassifier(benchmark_num_shards, MLAs[i]) for i in range(len(MLAs))]
+plt.plot(unlearned_fraction, ascsharded_results)
+shardedMLAs = [sc.VanillaShardedClassifier(max_number_of_shards, MLAs[i]) for i in range(len(MLAs))]
 for smla in shardedMLAs:
     sharded_results = []
     sharded_learner = smla
@@ -54,9 +58,8 @@ for smla in shardedMLAs:
         sharded_results.append(metrics.accuracy_score(y_test, predicted))
         print(sharded_results)
     plt.plot(unlearned_fraction, sharded_results)
-plt.plot(unlearned_fraction, ascsharded_results)
 plt.legend(MLA_labels)
 plt.xlabel('% points unlearned')
 plt.ylabel('Accuracy')
-plt.title('{} Shards'.format(benchmark_num_shards))
+plt.title('{} Shards'.format(max_number_of_shards))
 plt.show()

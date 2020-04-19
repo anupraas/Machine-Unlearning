@@ -8,10 +8,11 @@ number_of_shards = 3
 MLAs = [svm.SVC(gamma=0.001), nn.MLPClassifier(solver='lbfgs')]
 MLA_labels = ['SVM', 'MLP']
 X, y = datasets.load_digits(return_X_y=True)
-X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True)
+X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
 unlearned_fraction = np.asarray([0, 2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99])
 unlearn_counts = (np.rint((unlearned_fraction / 100) * len(X_train))).astype(int)
 unlearn_sequence = np.asarray(range(len(X_train)))
+np.random.seed(0)
 np.random.shuffle(unlearn_sequence)
 
 for mla_i in range(len(MLAs)):
