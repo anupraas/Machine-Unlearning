@@ -1,10 +1,11 @@
 import numpy as np
+import copy
 
 
 class modelWrapper:
 
     def __init__(self, model, num_classes, model_classes=None):
-        self.model = model
+        self.model = copy.deepcopy(model)
         self.num_classes = num_classes
         if model_classes is None:
             self.model_classes = list(range(num_classes))
