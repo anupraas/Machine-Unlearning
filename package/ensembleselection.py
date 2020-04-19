@@ -6,7 +6,7 @@ from numpy import inf
 
 class EnsembleSelectionClassifier:
 
-    def __init__(self, epsilon=0.01, maxIter=inf):
+    def __init__(self, epsilon=0.005, maxIter=inf):
         self.epsilon = epsilon
         self.max_iter = maxIter
 
@@ -20,7 +20,7 @@ class EnsembleSelectionClassifier:
         else:
             cur_weights = copy.deepcopy(initial_weights)
             cur_ensemble = EnsembleVoteClassifier(clfs=models, voting='soft', weights=cur_weights, refit=False)
-            cur_ensemble.fit()
+            cur_ensemble.fit(X, y)
             cur_accuracy = metrics.accuracy_score(y, cur_ensemble.predict(X))
         it = 0
         while True:
