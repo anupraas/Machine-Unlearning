@@ -5,7 +5,7 @@ import copy
 from mlxtend.classifier import EnsembleVoteClassifier
 from sklearn.dummy import DummyClassifier
 from package import modelwrapper as mw, ensembleselection as es
-
+from sklearn.model_selection import StratifiedKFold
 
 class AutoShardedClassifier:
 
@@ -41,13 +41,13 @@ class AutoShardedClassifier:
         print(Counter(y).most_common()[-1][1])
         self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
         print(self.num_shards)
+        self.create_training_subsets_for_shards()
         self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=300,
                                                                              ensemble_size=self.num_shards,
                                                                              ensemble_nbest=max(2*self.num_shards, 50),
                                                                              ensemble_memory_limit=4096,
                                                                              include_preprocessors=['no_preprocessing'])
         best_models_ensemble = self.ml_algorithm.fit(self.X_train, self.y_train).get_models_with_weights()
-        self.create_training_subsets_for_shards()
         shards_model_assignment_sequence = list(range(self.num_shards))
         shards_model_assignment_sequence_idx = 0
         for i in range(len(best_models_ensemble)):
@@ -98,14 +98,18 @@ class AutoShardedClassifier:
             self.create_ensemble()
 
     def create_training_subsets_for_shards(self):
-        y = self.y_train
-        manager = [0] * len(Counter(y).keys())
-        self.shard_data_dict = {sh_num: [] for sh_num in range(self.num_shards)}
-        for it in range(len(y)):
-            self.shard_data_dict[manager[y[it]]].append(it)
-            self.data_to_shard_dict[it] = manager[y[it]]
-            manager[y[it]] = (manager[y[it]] + 1) % self.num_shards
-        self.cur_train_ids = list(range(len(y)))
+        self.cur_train_ids = list(range(len(self.y_train)))
+        if self.num_shards is 1:
+            self.shard_data_dict[0] = copy.deepcopy(self.cur_train_ids)
+            self.data_to_shard_dict = {it: 0 for it in range(len(self.y_train))}
+        else:
+            skf = StratifiedKFold(n_splits=self.num_shards, shuffle=True, random_state=0)
+            shard_num = 0
+            for train_idx, test_idx in skf.split(self.X_train, self.y_train):
+                self.shard_data_dict[shard_num] = copy.deepcopy(test_idx)
+                for i in test_idx:
+                    self.data_to_shard_dict[i] = shard_num
+                shard_num += 1
 
     def create_ensemble(self):
         if self.ensemble_strategy is 1:
