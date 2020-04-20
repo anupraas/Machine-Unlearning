@@ -74,7 +74,7 @@ for i in range(1, len(unlearn_counts)):
     ascsharded_results.append(metrics.accuracy_score(y_test, predicted))
     print(ascsharded_results)
 plt.plot(unlearned_fraction, ascsharded_results)
-shardedMLAs = [sc.EnsembleShardedClassifier(max_number_of_shards, MLAs[i]) for i in range(len(MLAs))]
+shardedMLAs = [sc.VanillaShardedClassifier(max_number_of_shards, MLAs[i]) for i in range(len(MLAs))]
 for smla in shardedMLAs:
     sharded_results = []
     sharded_learner = smla
