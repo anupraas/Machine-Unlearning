@@ -58,7 +58,7 @@ class VanillaShardedClassifier:
         self.X_dummy = np.zeros(shape=(self.num_classes, len(X[0])))
         self.y_dummy = np.asarray(list(range(self.num_classes)))
         self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
-        self.initialize_bookkeeping_dicts2()
+        self.initialize_bookkeeping_dicts()
         for shard_num in self.shard_model_dict:
             self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
                                                  self.y_train[self.shard_data_dict[shard_num]])
