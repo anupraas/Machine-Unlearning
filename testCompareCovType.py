@@ -8,6 +8,7 @@ import random
 from sklearn.ensemble import RandomForestClassifier
 from collections import Counter
 
+
 def preprocess_covtype(X, y, num_per_class):
     total_classes = len(set(y))
     random.seed(0)
@@ -20,15 +21,12 @@ def preprocess_covtype(X, y, num_per_class):
         ret_x.extend(X[rand_sample])
     return np.asarray(ret_x), np.asarray(ret_y)
 
-max_number_of_shards = 1000
+
+max_number_of_shards = 10
 MLAs = [svm.SVC(gamma=0.001),
         nn.MLPClassifier(solver='lbfgs'),
         RandomForestClassifier(n_estimators=5)]
 MLA_labels = ['AutoEnsAS', 'SVM', 'MLP', 'RF']
-# MLA_labels = ['SVM', 'MLP', 'RF']
-
-# X, y = datasets.load_digits(return_X_y=True)
-
 X, y = datasets.fetch_covtype(return_X_y=True, shuffle=True, random_state=1)
 y = y - 1
 print(Counter(y).most_common())
