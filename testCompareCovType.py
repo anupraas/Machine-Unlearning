@@ -24,7 +24,7 @@ def preprocess_covtype(X, y, num_per_class):
 
 max_number_of_shards = 10
 MLAs = [svm.SVC(gamma=0.001),
-        nn.MLPClassifier(solver='lbfgs'),
+        nn.MLPClassifier(activation='relu', alpha=0.0001, hidden_layer_sizes=(50, 50, 50), learning_rate='constant', solver='lbfgs'),
         RandomForestClassifier(n_estimators=5)]
 MLA_labels = ['AutoEnsAS', 'SVM', 'MLP', 'RF']
 X, y = datasets.fetch_covtype(return_X_y=True, shuffle=True, random_state=1)
@@ -32,7 +32,7 @@ y = y - 1
 print(Counter(y).most_common())
 X, y = preprocess_covtype(X, y, 2500)
 print(Counter(y).most_common())
-X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
+X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1, stratify=y)
 unlearned_fraction = np.asarray([0, 2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99])
 unlearn_counts = (np.rint((unlearned_fraction / 100) * len(X_train))).astype(int)
 unlearn_sequence = np.asarray(range(len(X_train)))
