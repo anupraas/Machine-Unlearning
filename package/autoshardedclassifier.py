@@ -45,7 +45,7 @@ class AutoShardedClassifier:
         self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=900,
                                                                              ensemble_size=self.num_shards,
                                                                              ensemble_nbest=max(2*self.num_shards, 50),
-                                                                             ensemble_memory_limit=2048,
+                                                                             ensemble_memory_limit=4096,
                                                                              include_preprocessors=['no_preprocessing'])
         best_models_ensemble = self.ml_algorithm.fit(self.X_train, self.y_train).get_models_with_weights()
         shards_model_assignment_sequence = list(range(self.num_shards))
