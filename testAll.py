@@ -5,18 +5,16 @@ from package import shardedclassifier, autoshardedclassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC, LinearSVC, NuSVC
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier, ExtraTreesClassifier
 from sklearn.naive_bayes import GaussianNB, BernoulliNB, MultinomialNB
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.neural_network import MLPClassifier
 import random
 from collections import Counter
-from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.linear_model.stochastic_gradient import SGDClassifier
 from sklearn.linear_model.passive_aggressive import PassiveAggressiveClassifier
 from sklearn.preprocessing import LabelEncoder
-from package import GenerateDataset
+# from package import GenerateDataset
 
 
 def preprocess_data(X, y, samplesize=None):
@@ -35,24 +33,25 @@ def preprocess_data(X, y, samplesize=None):
 all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
 MLAs = [
     autoshardedclassifier.AutoShardedClassifier(),
-    AdaBoostClassifier(),
-    BernoulliNB(),
+    # AdaBoostClassifier(),
+    # BernoulliNB(),
     DecisionTreeClassifier(),
-    ExtraTreesClassifier(),
+    # ExtraTreesClassifier(),
     GaussianNB(),
-    GradientBoostingClassifier(),
+    # GradientBoostingClassifier(),
     KNeighborsClassifier(1),
-    LinearDiscriminantAnalysis(),
-    MultinomialNB(),
-    PassiveAggressiveClassifier(),
-    QuadraticDiscriminantAnalysis(),
-    LinearSVC(),
+    # LinearDiscriminantAnalysis(),
+    # MultinomialNB(),
+    # PassiveAggressiveClassifier(),
+    # QuadraticDiscriminantAnalysis(),
+    # LinearSVC(),
+    MLPClassifier(),
     SVC(),
-    MultinomialNB(),
-    PassiveAggressiveClassifier(),
-    QuadraticDiscriminantAnalysis(),
-    RandomForestClassifier(5),
-    SGDClassifier()
+    # MultinomialNB(),
+    # PassiveAggressiveClassifier(),
+    # QuadraticDiscriminantAnalysis(),
+    # RandomForestClassifier(5),
+    # SGDClassifier()
 ]
 
 # X, y = datasets.fetch_kddcup99(shuffle=True, random_state=0, return_X_y=True)
@@ -83,8 +82,9 @@ for number_of_shards in all_number_of_shards:
             sharded_learner = shardedclassifier.VanillaShardedClassifier(number_of_shards, mla_i)
         try:
             sharded_learner.fit(X_train, y_train)
-        except:
+        except Exception as e:
             print("{} failed initial training".format(mlaname))
+            print(e)
             continue
         predicted = sharded_learner.predict(X_test)
         initial_accuracy = metrics.accuracy_score(y_test, predicted)
@@ -100,8 +100,9 @@ for number_of_shards in all_number_of_shards:
             print('unlearning {}% : {} points'.format(unlearned_fraction[i], frac))
             try:
                 sharded_learner.unlearn(inds)
-            except:
+            except Exception as e:
                 print("{} failed while unlearning {}% points".format(mlaname, unlearned_fraction[i]))
+                print(e)
                 break
             predicted = sharded_learner.predict(X_test)
             sharded_mlp_results.append(metrics.accuracy_score(y_test, predicted))
