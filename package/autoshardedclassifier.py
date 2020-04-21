@@ -9,7 +9,7 @@ from sklearn.model_selection import StratifiedKFold
 
 class AutoShardedClassifier:
 
-    def __init__(self, num_shards=np.inf, ensemble_strategy=4):
+    def __init__(self, num_shards=np.inf, ensemble_strategy=1):
         self.ml_algorithm = None
         self.num_shards = num_shards
         self.X_train = None
@@ -42,10 +42,10 @@ class AutoShardedClassifier:
         self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
         print(self.num_shards)
         self.create_training_subsets_for_shards()
-        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=300,
+        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=30,
                                                                              ensemble_size=self.num_shards,
                                                                              ensemble_nbest=max(2*self.num_shards, 50),
-                                                                             ensemble_memory_limit=4096,
+                                                                             ensemble_memory_limit=2048,
                                                                              include_preprocessors=['no_preprocessing'])
         best_models_ensemble = self.ml_algorithm.fit(self.X_train, self.y_train).get_models_with_weights()
         shards_model_assignment_sequence = list(range(self.num_shards))
