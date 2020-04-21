@@ -37,5 +37,5 @@ class CustomDataset:
             count += 1
         return X, y
 
-CustomDataset().get_dataset('cifar10', 'cifar10')
-CustomDataset().get_dataset('mnist', 'mnist')
+# CustomDataset().get_dataset('cifar10', 'cifar10')
+# CustomDataset().get_dataset('mnist', 'mnist')
