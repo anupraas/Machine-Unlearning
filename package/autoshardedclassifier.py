@@ -22,7 +22,7 @@ class AutoShardedClassifier:
         self.default_class = None
         self.ensemble = None
         self.num_classes = None
-        if ensemble_strategy not in [1, 2, 3, 4]:
+        if ensemble_strategy not in [1, 2, 3, 4, 5]:
             ensemble_strategy = 1
         self.ensemble_strategy = ensemble_strategy
         self.X_dummy = None
@@ -37,16 +37,23 @@ class AutoShardedClassifier:
         self.X_dummy = np.zeros(shape=(self.num_classes, len(X[0])))
         self.y_dummy = np.asarray(list(range(self.num_classes)))
         self.default_class = Counter(y).most_common(1)[0][0]
-        print(self.num_shards)
-        print(Counter(y).most_common()[-1][1])
+        # print(self.num_shards)
+        # print(Counter(y).most_common()[-1][1])
         self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
-        print(self.num_shards)
+        # print(self.num_shards)
         self.create_training_subsets_for_shards()
-        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=900,
+        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=30,
                                                                              ensemble_size=self.num_shards,
                                                                              ensemble_nbest=max(2*self.num_shards, 50),
                                                                              ensemble_memory_limit=4096,
-                                                                             include_preprocessors=['no_preprocessing'])
+                                                                             include_preprocessors=["no_preprocessing"],
+                                                                             exclude_estimators=[                                                                             
+                                                                             # "random_forest", 
+                                                                             # "adaboost", 
+                                                                             # "extra_trees", 
+                                                                             # "gradient_boosting",
+                                                                             "k_nearest_neighbors"]
+                                                                             )
         best_models_ensemble = self.ml_algorithm.fit(self.X_train, self.y_train).get_models_with_weights()
         shards_model_assignment_sequence = list(range(self.num_shards))
         shards_model_assignment_sequence_idx = 0
@@ -94,7 +101,7 @@ class AutoShardedClassifier:
         # Create ensemble
         if self.ensemble_strategy is 4:
             self.create_all_ensembles()
-        else:
+        elif self.ensemble_strategy is not 5:
             self.create_ensemble()
 
     def create_training_subsets_for_shards(self):
@@ -106,7 +113,7 @@ class AutoShardedClassifier:
             skf = StratifiedKFold(n_splits=self.num_shards, shuffle=True, random_state=0)
             shard_num = 0
             for train_idx, test_idx in skf.split(self.X_train, self.y_train):
-                self.shard_data_dict[shard_num] = copy.deepcopy(test_idx)
+                self.shard_data_dict[shard_num] = copy.deepcopy(test_idx.tolist())
                 for i in test_idx:
                     self.data_to_shard_dict[i] = shard_num
                 shard_num += 1
