@@ -14,7 +14,7 @@ from collections import Counter
 from sklearn.linear_model.stochastic_gradient import SGDClassifier
 from sklearn.linear_model.passive_aggressive import PassiveAggressiveClassifier
 from sklearn.preprocessing import LabelEncoder
-# from package import GenerateDataset
+from package import GenerateDataset
 import pickle
 
 
@@ -58,8 +58,10 @@ MLAs = [
 ]
 
 # X, y = datasets.fetch_kddcup99(shuffle=True, random_state=0, return_X_y=True)
-X, y = datasets.fetch_covtype(return_X_y=True, shuffle=True, random_state=0)
-# X, y = GenerateDataset.CustomDataset().get_dataset('cifar10', 'cifar10')
+# X, y = datasets.fetch_covtype(return_X_y=True, shuffle=True, random_state=0)
+X, y = GenerateDataset.CustomDataset().get_dataset('mnist', 'mnist')
+print(len(y))
+print(Counter(y).most_common())
 # X, y = datasets.load_digits(return_X_y=True)
 X, y = preprocess_data(X, y, 0.1)
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=0, stratify=y)

@@ -42,7 +42,7 @@ class AutoShardedClassifier:
         self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
         # print(self.num_shards)
         self.create_training_subsets_for_shards()
-        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=900,
+        self.ml_algorithm = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=1800,
                                                                              ensemble_size=self.num_shards,
                                                                              ensemble_nbest=max(2*self.num_shards, 50),
                                                                              ensemble_memory_limit=4096,
