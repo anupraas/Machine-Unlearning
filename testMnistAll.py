@@ -18,8 +18,8 @@ from package import GenerateDataset
 import pickle
 
 
-results_file = 'covtype_compare_ens5'
-results_ber_file = 'covtype_compare_ens5_ber'
+results_file = 'mnist_compare_ens5_partial2'
+results_ber_file = 'mnist_compare_ens5_ber_partial2'
 
 
 def preprocess_data(X, y, samplesize=None):
@@ -35,9 +35,10 @@ def preprocess_data(X, y, samplesize=None):
     return X, y
 
 
-all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
+# all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
+all_number_of_shards = [100, 200]
 MLAs = [
-    autoshardedclassifier.AutoShardedClassifier(),
+    # autoshardedclassifier.AutoShardedClassifier(),
     # AdaBoostClassifier(),
     # BernoulliNB(),
     DecisionTreeClassifier(),
