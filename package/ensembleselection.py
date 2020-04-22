@@ -6,7 +6,7 @@ from numpy import inf
 
 class EnsembleSelectionClassifier:
 
-    def __init__(self, epsilon=0.0001, maxIter=inf):
+    def __init__(self, epsilon=0.001, maxIter=inf):
         self.epsilon = epsilon
         self.max_iter = maxIter
 
