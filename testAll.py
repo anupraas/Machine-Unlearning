@@ -49,9 +49,9 @@ MLAs = [
     # MultinomialNB(),
     # PassiveAggressiveClassifier(),
     # QuadraticDiscriminantAnalysis(),
-    # LinearSVC(C=0.025),
+    LinearSVC(),
     MLPClassifier(alpha=1, max_iter=500),
-    SVC(gamma=2, C=1)
+    # SVC(gamma=2, C=1)
     # MultinomialNB(),
     # RandomForestClassifier(5),
     # SGDClassifier()
@@ -120,10 +120,10 @@ for number_of_shards in all_number_of_shards:
             results_ber[number_of_shards][mlaname][unlearned_fraction[i]] = ber_accuracy
             curmla_unlearning.append(unlearned_fraction[i])
             print(sharded_mlp_results)
-with open(results_file, 'wb') as fp:
-    pickle.dump(results, fp)
-with open(results_ber_file, 'wb') as fp:
-    pickle.dump(results_ber, fp)
+            with open(results_file, 'wb') as fp:
+                pickle.dump(results, fp)
+            with open(results_ber_file, 'wb') as fp:
+                pickle.dump(results_ber, fp)
         # if mlaname is 'AutoShardedClassifier':
         #     plt.plot(curmla_unlearning, sharded_mlp_results, linewidth=3, color='black')
         # else:
