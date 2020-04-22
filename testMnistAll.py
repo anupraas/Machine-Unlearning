@@ -18,8 +18,8 @@ from package import GenerateDataset
 import pickle
 
 
-results_file = 'cifar10_benchmark'
-results_ber_file = 'cifar10_benchmark_ber'
+results_file = 'covtype_compare_ens5'
+results_ber_file = 'covtype_compare_ens5_ber'
 
 
 def preprocess_data(X, y, samplesize=None):
@@ -37,7 +37,7 @@ def preprocess_data(X, y, samplesize=None):
 
 all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
 MLAs = [
-    # autoshardedclassifier.AutoShardedClassifier(),
+    autoshardedclassifier.AutoShardedClassifier(),
     # AdaBoostClassifier(),
     # BernoulliNB(),
     DecisionTreeClassifier(),
@@ -59,17 +59,16 @@ MLAs = [
 
 # X, y = datasets.fetch_kddcup99(shuffle=True, random_state=0, return_X_y=True)
 # X, y = datasets.fetch_covtype(return_X_y=True, shuffle=True, random_state=0)
-X, y = GenerateDataset.CustomDataset().get_dataset('cifar10', 'cifar10')
+X, y = GenerateDataset.CustomDataset().get_dataset('mnist', 'mnist')
 print(len(y))
 print(Counter(y).most_common())
 # X, y = datasets.load_digits(return_X_y=True)
-# X, y = preprocess_data(X, y, 0.3)
+# X, y = preprocess_data(X, y, 0.1)
 le = LabelEncoder()
 le.fit(y)
 y = le.transform(y)
 print(len(y))
 print(Counter(y).most_common())
-print(np.shape(X))
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=0, stratify=y)
 unlearned_fraction = np.asarray([0, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 25, 50])
 # unlearned_fraction = np.asarray([0, 1, 2, 5])
