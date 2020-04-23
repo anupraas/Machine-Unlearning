@@ -18,8 +18,8 @@ from package import GenerateDataset
 import pickle
 
 
-results_file = 'covtype_benchmark_part_2'
-results_ber_file = 'covtype_benchmark_part_2_ber'
+results_file = 'covtype_auto_part_2'
+results_ber_file = 'covtype_auto_part_2_ber'
 
 
 def preprocess_data(X, y, samplesize=None):
@@ -38,20 +38,20 @@ def preprocess_data(X, y, samplesize=None):
 # all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
 all_number_of_shards = [100, 200]
 MLAs = [
-    # autoshardedclassifier.AutoShardedClassifier(),
+    autoshardedclassifier.AutoShardedClassifier(),
     # AdaBoostClassifier(),
     # BernoulliNB(),
-    DecisionTreeClassifier(),
+    # DecisionTreeClassifier(),
     # ExtraTreesClassifier(),
-    GaussianNB(),
+    # GaussianNB(),
     # GradientBoostingClassifier(),
     # KNeighborsClassifier(1),
     # LinearDiscriminantAnalysis(),
     # MultinomialNB(),
     # PassiveAggressiveClassifier(),
     # QuadraticDiscriminantAnalysis(),
-    LinearSVC(),
-    MLPClassifier(alpha=1, max_iter=500),
+    # LinearSVC(),
+    # MLPClassifier(alpha=1, max_iter=500),
     # SVC(gamma=2, C=1)
     # MultinomialNB(),
     # RandomForestClassifier(5),
