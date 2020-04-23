@@ -30,23 +30,10 @@ def preprocess_data(X, y, samplesize=None):
 
 all_shards = [5, 10, 20]
 MLAs = [
-    # AdaBoostClassifier(),
-    # BernoulliNB(),
-    DecisionTreeClassifier(),
-    # ExtraTreesClassifier(),
-    GaussianNB(),
-    # GradientBoostingClassifier(),
-    # KNeighborsClassifier(1),
-    # LinearDiscriminantAnalysis(),
-    # MultinomialNB(),
-    # PassiveAggressiveClassifier(),
-    # QuadraticDiscriminantAnalysis(),
-    LinearSVC(),
     MLPClassifier(alpha=1, max_iter=500),
-    # SVC(gamma=2, C=1)
-    # MultinomialNB(),
-    # RandomForestClassifier(5),
-    # SGDClassifier()
+    LinearSVC(),
+    DecisionTreeClassifier(),
+    GaussianNB()
 ]
 
 X, y = GenerateDataset.CustomDataset().get_dataset('mnist', 'mnist')
