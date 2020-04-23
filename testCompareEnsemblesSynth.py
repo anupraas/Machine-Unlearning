@@ -12,7 +12,7 @@ from sklearn import datasets
 from sklearn.datasets import make_classification
 
 results_file = 'compare_ensembles_synth'
-results_ber_file = 'compare_ensembles_synth'
+results_ber_file = 'compare_ensembles_synth_ber'
 
 
 def preprocess_data(X, y, samplesize=None):
