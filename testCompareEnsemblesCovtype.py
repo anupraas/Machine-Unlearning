@@ -33,14 +33,14 @@ all_shards = [5, 10, 20]
 MLAs = [
     DecisionTreeClassifier(),
     MLPClassifier(alpha=1, max_iter=500),
-    GaussianNB(),
-    LinearSVC()
+    LinearSVC(),
+    GaussianNB()
 ]
 
 # X, y = make_classification(n_classes=5, n_samples=10000, n_informative=4, random_state=0)
 # X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
 X, y = datasets.fetch_covtype(return_X_y=True, shuffle=True, random_state=0)
-X, y = preprocess_data(X, y, 0.01)
+X, y = preprocess_data(X, y, 0.02)
 X_train = X
 y_train = y
 X_test = X
