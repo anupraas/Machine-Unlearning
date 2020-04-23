@@ -18,8 +18,8 @@ from package import GenerateDataset
 import pickle
 
 
-results_file = 'covtype_compare_ens5'
-results_ber_file = 'covtype_compare_ens5_ber'
+results_file = 'covtype_benchmark_part_2'
+results_ber_file = 'covtype_benchmark_part_2_ber'
 
 
 def preprocess_data(X, y, samplesize=None):
@@ -35,9 +35,10 @@ def preprocess_data(X, y, samplesize=None):
     return X, y
 
 
-all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
+# all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
+all_number_of_shards = [100, 200]
 MLAs = [
-    autoshardedclassifier.AutoShardedClassifier(),
+    # autoshardedclassifier.AutoShardedClassifier(),
     # AdaBoostClassifier(),
     # BernoulliNB(),
     DecisionTreeClassifier(),
@@ -58,8 +59,8 @@ MLAs = [
 ]
 
 # X, y = datasets.fetch_kddcup99(shuffle=True, random_state=0, return_X_y=True)
-# X, y = datasets.fetch_covtype(return_X_y=True, shuffle=True, random_state=0)
-X, y = GenerateDataset.CustomDataset().get_dataset('mnist', 'mnist')
+X, y = datasets.fetch_covtype(return_X_y=True, shuffle=True, random_state=0)
+# X, y = GenerateDataset.CustomDataset().get_dataset('mnist', 'mnist')
 print(len(y))
 print(Counter(y).most_common())
 # X, y = datasets.load_digits(return_X_y=True)
