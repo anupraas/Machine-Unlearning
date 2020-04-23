@@ -32,8 +32,8 @@ all_shards = [5, 10, 20]
 MLAs = [
     MLPClassifier(alpha=1, max_iter=500),
     LinearSVC(),
-    DecisionTreeClassifier(),
-    GaussianNB()
+    GaussianNB(),
+    DecisionTreeClassifier()
 ]
 
 X, y = GenerateDataset.CustomDataset().get_dataset('cifar10', 'cifar10')

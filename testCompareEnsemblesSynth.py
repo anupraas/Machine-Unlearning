@@ -31,10 +31,10 @@ def preprocess_data(X, y, samplesize=None):
 
 all_shards = [5, 10, 20]
 MLAs = [
-    MLPClassifier(alpha=1, max_iter=500),
-    LinearSVC(),
     DecisionTreeClassifier(),
-    GaussianNB()
+    MLPClassifier(alpha=1, max_iter=500),
+    GaussianNB(),
+    LinearSVC()
 ]
 
 X, y = make_classification(n_classes=5, n_samples=10000, n_informative=4, random_state=0)
