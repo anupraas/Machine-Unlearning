@@ -18,8 +18,8 @@ from package import GenerateDataset
 import pickle
 
 
-results_file = 'mnist_compare_ens5_partial2'
-results_ber_file = 'mnist_compare_ens5_ber_partial2'
+results_file = 'mnist_benchmark_part3'
+results_ber_file = 'mnist_benchmark_part3_ber'
 
 
 def preprocess_data(X, y, samplesize=None):
@@ -35,8 +35,8 @@ def preprocess_data(X, y, samplesize=None):
     return X, y
 
 
-# all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
-all_number_of_shards = [100, 200]
+all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
+# all_number_of_shards = [100, 200]
 MLAs = [
     # autoshardedclassifier.AutoShardedClassifier(),
     # AdaBoostClassifier(),
@@ -64,10 +64,10 @@ X, y = GenerateDataset.CustomDataset().get_dataset('mnist', 'mnist')
 print(len(y))
 print(Counter(y).most_common())
 # X, y = datasets.load_digits(return_X_y=True)
-# X, y = preprocess_data(X, y, 0.1)
-le = LabelEncoder()
-le.fit(y)
-y = le.transform(y)
+X, y = preprocess_data(X, y, 0.1)
+# le = LabelEncoder()
+# le.fit(y)
+# y = le.transform(y)
 print(len(y))
 print(Counter(y).most_common())
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=0, stratify=y)
