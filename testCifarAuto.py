@@ -18,8 +18,8 @@ from package import GenerateDataset
 import pickle
 
 
-results_file = 'cifar10_auto_ens5_part_1'
-results_ber_file = 'cifar10_auto_ens5_part_1_ber'
+results_file = 'cifar10_auto_ens5_part_2'
+results_ber_file = 'cifar10_auto_ens5_part_2_ber'
 
 
 def preprocess_data(X, y, samplesize=None):
@@ -64,10 +64,10 @@ X, y = GenerateDataset.CustomDataset().get_dataset('cifar10', 'cifar10')
 print(len(y))
 print(Counter(y).most_common())
 # X, y = datasets.load_digits(return_X_y=True)
-# X, y = preprocess_data(X, y, 0.3)
-le = LabelEncoder()
-le.fit(y)
-y = le.transform(y)
+X, y = preprocess_data(X, y, 0.1)
+# le = LabelEncoder()
+# le.fit(y)
+# y = le.transform(y)
 print(len(y))
 print(Counter(y).most_common())
 print(np.shape(X))
