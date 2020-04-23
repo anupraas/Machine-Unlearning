@@ -8,6 +8,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.preprocessing import LabelEncoder
 from package import GenerateDataset
 import pickle
+from sklearn import datasets
 
 results_file = 'compare_ensembles_mnist10'
 results_ber_file = 'compare_ensembles_mnist10_ber'
@@ -20,7 +21,8 @@ def preprocess_data(X, y, samplesize=None):
     if samplesize is not None:
         print(Counter(y).most_common())
         print(len(y))
-        _, X, _, y = model_selection.train_test_split(X, y, test_size=samplesize, shuffle=True, random_state=0, stratify=y)
+        _, X, _, y = model_selection.train_test_split(X, y, test_size=samplesize, shuffle=True, random_state=0,
+                                                      stratify=y)
         print(Counter(y).most_common())
         print(len(y))
     return X, y
@@ -47,13 +49,16 @@ MLAs = [
     # SGDClassifier()
 ]
 
-
 X, y = GenerateDataset.CustomDataset().get_dataset('mnist', 'mnist')
 X, y = preprocess_data(X, y, 0.1)
+# X, y = datasets.load_digits(return_X_y=True)
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
 
 results = {ns: {mla.__class__.__name__: None for mla in MLAs} for ns in all_shards}
 results_ber = {ns: {mla.__class__.__name__: None for mla in MLAs} for ns in all_shards}
+for ns in all_shards:
+    results[ns]['ens'] = None
+    results_ber[ns]['ens'] = None
 
 for num_shards in all_shards:
     for mla in MLAs:
@@ -64,11 +69,27 @@ for num_shards in all_shards:
         sharded_learner.fit(X_train, y_train)
         predicted, predicted_ens = sharded_learner.predict(X_test)
         results[num_shards][mla_name] = (metrics.accuracy_score(y_test, predicted),
-                                         metrics.accuracy_score(y_test, predicted))
-        results_ber[num_shards][mla_name] = (metrics.balanced_accuracy_score(y_test, predicted_ens),
+                                         metrics.accuracy_score(y_test, predicted_ens))
+        results_ber[num_shards][mla_name] = (metrics.balanced_accuracy_score(y_test, predicted),
                                              metrics.balanced_accuracy_score(y_test, predicted_ens))
         print(results[num_shards][mla_name])
         with open(results_file, 'wb') as fp:
             pickle.dump(results, fp)
         with open(results_ber_file, 'wb') as fp:
             pickle.dump(results_ber, fp)
+
+for num_shards in all_shards:
+    print('ens {} shards'.format(num_shards))
+    sharded_learner = sc.TestEnsembleMultipleModels(num_shards, MLAs)
+    sharded_learner.fit(X_train, y_train)
+    predicted, predicted_ens = sharded_learner.predict(X_test)
+    results[num_shards]['ens'] = (metrics.accuracy_score(y_test, predicted),
+                                  metrics.accuracy_score(y_test, predicted_ens))
+    results_ber[num_shards]['ens'] = (metrics.balanced_accuracy_score(y_test, predicted),
+                                      metrics.balanced_accuracy_score(y_test, predicted_ens))
+    print(results[num_shards]['ens'])
+
+with open(results_file, 'wb') as fp:
+    pickle.dump(results, fp)
+with open(results_ber_file, 'wb') as fp:
+    pickle.dump(results_ber, fp)

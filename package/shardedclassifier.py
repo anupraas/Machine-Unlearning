@@ -2,7 +2,7 @@ import copy
 import numpy as np
 from collections import Counter
 from package import ensembleselection, modelwrapper as mw
-# import autosklearn.classification
+import autosklearn.classification
 from mlxtend.classifier import EnsembleVoteClassifier
 from sklearn.dummy import DummyClassifier
 
@@ -156,7 +156,66 @@ class TestEnsembleShardedClassifier(VanillaShardedClassifier):
     def fit(self, X, y):
         super().fit(X, y)
         self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
-            list(self.shard_model_dict.values()), self.X_train, self.y_train, ens_voting='hard', initial_weights=[0]*self.num_shards)
+            list(self.shard_model_dict.values()), self.X_train, self.y_train, ens_voting='hard',
+            initial_weights=[1] * self.num_shards)
+
+    def predict(self, X):
+        return self.eclf.predict(X), self.ensembleModel.predict(X)
+
+
+class TestEnsembleMultipleModels():
+    ensembleModel = None
+
+    def __init__(self, num_shards, ml_algorithm):
+        if not isinstance(ml_algorithm, list):
+            raise ValueError("pass a list of distinct models")
+        self.num_shards = num_shards
+        self.ml_algorithm = ml_algorithm
+        self.X_train = None
+        self.y_train = None
+        self.shard_data_dict = {}
+        self.shard_model_dict = {}
+        self.data_to_shard_dict = {}
+        self.cur_train_ids = []
+        self.default_class = None
+        self.num_classes = None
+        self.X_dummy = None
+        self.y_dummy = None
+        self.eclf = None
+
+    def fit(self, X, y):
+        self.X_train = copy.deepcopy(X)
+        self.y_train = copy.deepcopy(y)
+        self.default_class = Counter(y).most_common(1)[0][0]
+        self.num_classes = len(set(self.y_train))
+        self.X_dummy = np.zeros(shape=(self.num_classes, len(X[0])))
+        self.y_dummy = np.asarray(list(range(self.num_classes)))
+        self.num_shards = min(self.num_shards, Counter(y).most_common()[-1][1])
+        self.initialize_bookkeeping_dicts()
+        for shard_num in self.shard_model_dict:
+            self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
+                                                 self.y_train[self.shard_data_dict[shard_num]])
+        self.eclf = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()),
+                                           weights=[1] * self.num_shards,
+                                           voting='hard', refit=False)
+        self.eclf.fit(self.X_dummy, self.y_dummy)
+        self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
+            list(self.shard_model_dict.values()), self.X_train, self.y_train, ens_voting='hard',
+            initial_weights=[1] * self.num_shards)
+
+    def initialize_bookkeeping_dicts(self):
+        y = self.y_train
+        manager = [0] * len(Counter(y).keys())
+        self.shard_data_dict = {sh_num: [] for sh_num in range(self.num_shards)}
+        for it in range(len(y)):
+            self.shard_data_dict[manager[y[it]]].append(it)
+            self.data_to_shard_dict[it] = manager[y[it]]
+            manager[y[it]] = (manager[y[it]] + 1) % self.num_shards
+        model = 0
+        for it in range(self.num_shards):
+            self.shard_model_dict[it] = mw.modelWrapper(model=self.ml_algorithm[model], num_classes=self.num_classes)
+            model = (model + 1)%len(self.ml_algorithm)
+        self.cur_train_ids = list(range(len(y)))
 
     def predict(self, X):
         return self.eclf.predict(X), self.ensembleModel.predict(X)
