@@ -92,7 +92,7 @@ for number_of_shards in all_number_of_shards:
         MLA_labels.append(mlaname)
         sharded_mlp_results = []
         if mlaname is 'AutoShardedClassifier':
-            sharded_learner = autoshardedclassifier.AutoShardedClassifier(number_of_shards, ensemble_strategy=1)
+            sharded_learner = autoshardedclassifier.AutoShardedClassifier(number_of_shards, ensemble_strategy=5)
         else:
             sharded_learner = shardedclassifier.VanillaShardedClassifier(number_of_shards, mla_i)
         try:
