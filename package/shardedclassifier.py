@@ -2,7 +2,7 @@ import copy
 import numpy as np
 from collections import Counter
 from package import ensembleselection, modelwrapper as mw
-import autosklearn.classification
+# import autosklearn.classification
 from mlxtend.classifier import EnsembleVoteClassifier
 from sklearn.dummy import DummyClassifier
 
@@ -62,7 +62,8 @@ class VanillaShardedClassifier:
         for shard_num in self.shard_model_dict:
             self.shard_model_dict[shard_num].fit(self.X_train[self.shard_data_dict[shard_num]],
                                                  self.y_train[self.shard_data_dict[shard_num]])
-        self.eclf = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()), weights=[1]*self.num_shards, voting='hard', refit=False)
+        self.eclf = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()), weights=[1] * self.num_shards,
+                                           voting='hard', refit=False)
         self.eclf.fit(self.X_dummy, self.y_dummy)
 
     # Prediction - vanilla implementation: taking simple majority vote
@@ -88,7 +89,8 @@ class VanillaShardedClassifier:
             else:
                 self.shard_model_dict[shard_i].fit(self.X_train[self.shard_data_dict[shard_i]],
                                                    self.y_train[self.shard_data_dict[shard_i]])
-        self.eclf = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()), weights=[1]*self.num_shards, voting='hard', refit=False)
+        self.eclf = EnsembleVoteClassifier(clfs=list(self.shard_model_dict.values()), weights=[1] * self.num_shards,
+                                           voting='hard', refit=False)
         self.eclf.fit(self.X_dummy, self.y_dummy)
 
     #   Creates class-balanced separations of training data and assigns to each shard
@@ -111,7 +113,7 @@ class VanillaShardedClassifier:
         for i in range(len(y)):
             self.shard_data_dict[cur_shard].append(i)
             self.data_to_shard_dict[i] = cur_shard
-            cur_shard = (cur_shard+1) % self.num_shards
+            cur_shard = (cur_shard + 1) % self.num_shards
         self.shard_model_dict = {sh_num: mw.modelWrapper(model=self.ml_algorithm, num_classes=self.num_classes)
                                  for sh_num in range(self.num_shards)}
         self.cur_train_ids = list(range(len(y)))
@@ -146,6 +148,18 @@ class EnsembleShardedClassifier(VanillaShardedClassifier):
         super().unlearn(X_y_ids)
         self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
             list(self.shard_model_dict.values()), self.X_train[self.cur_train_ids], self.y_train[self.cur_train_ids])
+
+
+class TestEnsembleShardedClassifier(VanillaShardedClassifier):
+    ensembleModel = None
+
+    def fit(self, X, y):
+        super().fit(X, y)
+        self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
+            list(self.shard_model_dict.values()), self.X_train, self.y_train, ens_voting='hard', initial_weights=[1]*self.num_shards)
+
+    def predict(self, X):
+        return self.eclf.predict(X), self.ensembleModel.predict(X)
 
 
 #   AutoML-Model-Reuse-Vanilla-ShardedClassifier: Extends VanillaShardedClassifier

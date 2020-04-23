@@ -12,14 +12,14 @@ class EnsembleSelectionClassifier:
 
     # Expects a list of "wrapped" models in "models" and a validation set in "X", "y".
     # Returns an ensemble
-    def getEnsemble(self, models, X, y, initial_weights=None, ret_weights=False):
+    def getEnsemble(self, models, X, y, initial_weights=None, ret_weights=False, ens_voting='soft'):
         if initial_weights is None or sum(initial_weights) is 0:
             cur_weights = [0] * len(models)
             cur_accuracy = 0
             cur_ensemble = None
         else:
             cur_weights = copy.deepcopy(initial_weights)
-            cur_ensemble = EnsembleVoteClassifier(clfs=models, voting='soft', weights=cur_weights, refit=False)
+            cur_ensemble = EnsembleVoteClassifier(clfs=models, voting=ens_voting, weights=cur_weights, refit=False)
             cur_ensemble.fit(X, y)
             cur_accuracy = metrics.accuracy_score(y, cur_ensemble.predict(X))
         it = 0
@@ -29,7 +29,7 @@ class EnsembleSelectionClassifier:
             for i in range(len(models)):
                 candidate_weights = copy.deepcopy(cur_weights)
                 candidate_weights[i] += 1
-                candidate_ensemble = EnsembleVoteClassifier(clfs=models, voting='soft', weights=candidate_weights,
+                candidate_ensemble = EnsembleVoteClassifier(clfs=models, voting=ens_voting, weights=candidate_weights,
                                                             refit=False)
                 # Dummy call to fit to prevent errors
                 candidate_ensemble.fit(X, y)
