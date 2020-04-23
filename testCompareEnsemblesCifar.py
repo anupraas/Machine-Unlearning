@@ -39,8 +39,11 @@ MLAs = [
 X, y = GenerateDataset.CustomDataset().get_dataset('cifar10', 'cifar10')
 X, y = preprocess_data(X, y, 0.1)
 # X, y = datasets.load_digits(return_X_y=True)
-X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
-
+# X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
+X_train = X
+y_train = y
+X_test = X
+y_test = y
 results = {ns: {mla.__class__.__name__: None for mla in MLAs} for ns in all_shards}
 results_ber = {ns: {mla.__class__.__name__: None for mla in MLAs} for ns in all_shards}
 for ns in all_shards:

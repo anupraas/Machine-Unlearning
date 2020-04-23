@@ -38,8 +38,11 @@ MLAs = [
 ]
 
 X, y = make_classification(n_classes=5, n_samples=10000, n_informative=4, random_state=0)
-X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
-
+# X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
+X_train = X
+y_train = y
+X_test = X
+y_test = y
 results = {ns: {mla.__class__.__name__: None for mla in MLAs} for ns in all_shards}
 results_ber = {ns: {mla.__class__.__name__: None for mla in MLAs} for ns in all_shards}
 for ns in all_shards:
