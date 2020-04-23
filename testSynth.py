@@ -19,8 +19,8 @@ import pickle
 from sklearn.datasets import make_classification
 
 
-results_file = 'synth_benchmark'
-results_ber_file = 'synth_benchmark_ber'
+results_file = 'synth_auto'
+results_ber_file = 'synth_auto_ber'
 
 
 def preprocess_data(X, y, samplesize=None):
