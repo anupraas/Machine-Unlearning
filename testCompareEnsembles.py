@@ -9,8 +9,8 @@ from sklearn.preprocessing import LabelEncoder
 from package import GenerateDataset
 import pickle
 
-results_file = 'covtype_auto_part_2'
-results_ber_file = 'covtype_auto_part_2_ber'
+results_file = 'compare_ensembles_mnist10'
+results_ber_file = 'compare_ensembles_mnist10_ber'
 
 
 def preprocess_data(X, y, samplesize=None):
@@ -49,7 +49,7 @@ MLAs = [
 
 
 X, y = GenerateDataset.CustomDataset().get_dataset('mnist', 'mnist')
-X, y = preprocess_data(X, y, 0.05)
+X, y = preprocess_data(X, y, 0.1)
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
 
 results = {ns: {mla.__class__.__name__: None for mla in MLAs} for ns in all_shards}

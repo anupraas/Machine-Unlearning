@@ -156,7 +156,7 @@ class TestEnsembleShardedClassifier(VanillaShardedClassifier):
     def fit(self, X, y):
         super().fit(X, y)
         self.ensembleModel = ensembleselection.EnsembleSelectionClassifier().getEnsemble(
-            list(self.shard_model_dict.values()), self.X_train, self.y_train, ens_voting='hard', initial_weights=[1]*self.num_shards)
+            list(self.shard_model_dict.values()), self.X_train, self.y_train, ens_voting='soft', initial_weights=[1]*self.num_shards)
 
     def predict(self, X):
         return self.eclf.predict(X), self.ensembleModel.predict(X)
