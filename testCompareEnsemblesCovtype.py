@@ -29,7 +29,7 @@ def preprocess_data(X, y, samplesize=None):
     return X, y
 
 
-all_shards = [5, 10, 20]
+all_shards = [50, 100]
 MLAs = [
     DecisionTreeClassifier(),
     MLPClassifier(alpha=1, max_iter=500),
