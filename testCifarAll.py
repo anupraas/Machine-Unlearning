@@ -18,8 +18,8 @@ from package import GenerateDataset
 import pickle
 
 
-results_file = 'cifar10_benchmark'
-results_ber_file = 'cifar10_benchmark_ber'
+results_file = 'cifar10_benchmark_part3'
+results_ber_file = 'cifar10_benchmark_ber_part3'
 
 
 def preprocess_data(X, y, samplesize=None):
@@ -35,7 +35,7 @@ def preprocess_data(X, y, samplesize=None):
     return X, y
 
 
-all_number_of_shards = [1, 5, 10, 20, 50, 100, 200]
+all_number_of_shards = [1]
 MLAs = [
     # autoshardedclassifier.AutoShardedClassifier(),
     # AdaBoostClassifier(),
