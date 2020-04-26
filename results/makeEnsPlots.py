@@ -9,11 +9,9 @@ MLAs = ['MLPClassifier', 'DecisionTreeClassifier', 'GaussianNB', 'LinearSVC', 'M
 
 
 def plot_for_one_dataset(_a, data_name):
-    # _ax = plt.subplot(111)
     _fig, _ax = plt.subplots()
     _shards = list(_a.keys())
     _shards.sort()
-    # _mlas = list(a[5].keys())
     _mlas = MLAs
     _tickvalues = np.asarray([5, 10, 15])
     in_accs = {m: [] for m in _mlas}
@@ -43,8 +41,8 @@ def plot_for_one_dataset(_a, data_name):
                          textcoords="offset points",
                          ha='center', va='bottom', size=6)
             offset += width
-    box = _ax.get_position()
-    _ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    _box = _ax.get_position()
+    _ax.set_position([_box.x0, _box.y0, _box.width * 0.8, _box.height])
     _ax.legend(_mlas, loc='center left', bbox_to_anchor=(1, 0.5))
     _ax.set_xticks(_tickvalues)
     _ax.set_xticklabels(_shards)
@@ -75,14 +73,12 @@ plot_for_one_dataset(a2, 'covertype')
 plot_for_one_dataset(a3, 'MNIST')
 plot_for_one_dataset(a4, 'Synthetic')
 
-fig = plt.figure()
-ax = plt.subplot(111)
 shards = list(a1.keys())
 shards.sort()
-# mlas = list(a1[5].keys())
 mlas = MLAs
 tickvalues = np.asarray([5, 10, 15])
 final_to_plot = {m: [] for m in mlas}
+fig, ax = plt.subplots()
 for sh in shards:
     for m in mlas:
         change = 0
@@ -94,7 +90,9 @@ for sh in shards:
 for m in mlas:
     plt.plot(tickvalues, final_to_plot[m], label=m, linewidth=3)
 plt.xticks(tickvalues, shards)
-plt.legend()
+box = ax.get_position()
+ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+ax.legend(MLAs, loc='center left', bbox_to_anchor=(1, 0.5))
 plt.xlabel('Shards')
 plt.ylabel('% Increase in accuracy')
 plt.title('Impact of ensemble selection on accuracy')
