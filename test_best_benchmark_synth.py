@@ -40,7 +40,7 @@ X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_s
 
 best_models = {}
 for m in MLAs:
-    model = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=60,
+    model = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=300,
                                                              ensemble_size=1,
                                                              ensemble_memory_limit=4096,
                                                              include_preprocessors=["no_preprocessing"],
