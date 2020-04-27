@@ -31,7 +31,7 @@ def plot_for_one_dataset(_a, data_name):
             plt.title('{} shards {} dataset'.format(sh, data_name))
         else:
             plt.title('{} shard {} dataset'.format(sh, data_name))
-        plt.ylim(top=1)
+        plt.ylim(bottom=0, top=1)
         _fig.tight_layout()
         plt.show()
 

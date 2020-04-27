@@ -49,7 +49,7 @@ def plot_for_one_dataset(_a, data_name):
     plt.xlabel('Shards')
     plt.ylabel('Accuracy')
     plt.title('Ensemble Selection on {} dataset'.format(data_name))
-    plt.ylim(top=1)
+    plt.ylim(bottom=0, top=1)
     _fig.tight_layout()
     plt.show()
 
