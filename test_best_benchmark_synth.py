@@ -35,7 +35,6 @@ MLAs = [
 X, y = make_classification(n_classes=5, n_samples=10000, n_informative=4, random_state=0)
 print(len(y))
 print(Counter(y).most_common())
-X, y = preprocess_data(X, y, 0.1)
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=0,
                                                                     stratify=y)
 
