@@ -37,6 +37,17 @@ print(Counter(y).most_common())
 X, y = preprocess_data(X, y, 0.1)
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, shuffle=True, random_state=0,
                                                                     stratify=y)
+
+best_models = {}
+for m in MLAs:
+    model = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=60,
+                                                             ensemble_size=1,
+                                                             ensemble_memory_limit=4096,
+                                                             include_preprocessors=["no_preprocessing"],
+                                                             include_estimators=[m])
+    model.fit(X_train, y_train)
+    best_models[m] = model.get_models_with_weights()[0][1]
+
 unlearned_fraction = np.asarray([0, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 25, 50])
 unlearn_counts = (np.rint((unlearned_fraction / 100) * len(X_train))).astype(int)
 unlearn_sequence = np.asarray(range(len(X_train)))
@@ -54,13 +65,7 @@ for number_of_shards in all_number_of_shards:
         mlaname = mla_i
         MLA_labels.append(mlaname)
         sharded_mlp_results = []
-        mla_i = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=60,
-                                                                 ensemble_size=1,
-                                                                 ensemble_memory_limit=4096,
-                                                                 include_preprocessors=["no_preprocessing"],
-                                                                 include_estimators=[mla_i])
-        mla_i.fit(X_train, y_train)
-        mla_i = mla_i.get_models_with_weights()[0][1]
+        mla_i = best_models[mla_i]
         sharded_learner = shardedclassifier.VanillaShardedClassifier(number_of_shards, mla_i)
         try:
             sharded_learner.fit(X_train, y_train)
