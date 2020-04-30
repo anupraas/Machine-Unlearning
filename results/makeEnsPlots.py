@@ -54,13 +54,13 @@ def plot_for_one_dataset(_a, data_name):
     plt.show()
 
 
-with open('compare_ensembles_cifar', 'rb') as f:
+with open('raw/compare_ensembles_cifar', 'rb') as f:
     a1 = pickle.load(f)
-with open('compare_ensembles_covtype', 'rb') as f:
+with open('raw/compare_ensembles_covtype', 'rb') as f:
     a2 = pickle.load(f)
-with open('compare_ensembles_mnist', 'rb') as f:
+with open('raw/compare_ensembles_mnist', 'rb') as f:
     a3 = pickle.load(f)
-with open('compare_ensembles_synth', 'rb') as f:
+with open('raw/compare_ensembles_synth', 'rb') as f:
     a4 = pickle.load(f)
 
 for a in [a1, a2, a3, a4]:

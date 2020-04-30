@@ -36,13 +36,13 @@ def plot_for_one_dataset(_a, data_name):
         plt.show()
 
 
-with open('cifar10', 'rb') as f:
+with open('raw/cifar10', 'rb') as f:
     a1 = pickle.load(f)
-with open('covtype', 'rb') as f:
+with open('raw/covtype', 'rb') as f:
     a2 = pickle.load(f)
-with open('mnist', 'rb') as f:
+with open('raw/mnist', 'rb') as f:
     a3 = pickle.load(f)
-with open('synth', 'rb') as f:
+with open('raw/synth', 'rb') as f:
     a4 = pickle.load(f)
 
 plot_for_one_dataset(a1, 'CIFAR-10')
