@@ -58,7 +58,7 @@ with open('compare_ensembles_cifar', 'rb') as f:
     a1 = pickle.load(f)
 with open('compare_ensembles_covtype', 'rb') as f:
     a2 = pickle.load(f)
-with open('compare_ensembles_mnist10', 'rb') as f:
+with open('compare_ensembles_mnist', 'rb') as f:
     a3 = pickle.load(f)
 with open('compare_ensembles_synth', 'rb') as f:
     a4 = pickle.load(f)
