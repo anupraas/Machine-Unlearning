@@ -45,10 +45,10 @@ with open('raw/mnist', 'rb') as f:
 with open('raw/synth', 'rb') as f:
     a4 = pickle.load(f)
 
-plot_for_one_dataset(a1, 'CIFAR-10')
-plot_for_one_dataset(a2, 'covertype')
-plot_for_one_dataset(a3, 'MNIST')
-plot_for_one_dataset(a4, 'Synthetic')
+# plot_for_one_dataset(a1, 'CIFAR-10')
+# plot_for_one_dataset(a2, 'covertype')
+# plot_for_one_dataset(a3, 'MNIST')
+# plot_for_one_dataset(a4, 'Synthetic')
 
 tickvalues = list(range(16))
 A = [a1, a2, a3, a4]
@@ -77,7 +77,10 @@ for sh in SHARDS:
     ax.legend(MLAs, loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlabel('% points unlearned')
     plt.ylabel('% Accuracy Less than Maximum')
-    plt.title('Average Relative Accuracy {} shards'.format(sh))
+    if sh > 1:
+        plt.title('Average % Difference from Max Accuracy {} shards'.format(sh))
+    else:
+        plt.title('Average % Difference from Max Accuracy {} shard'.format(sh))
     plt.ylim(top=40.0)
     plt.show()
 
@@ -103,9 +106,12 @@ for sh in SHARDS:
         plt.plot(tickvalues, all_a[m])
     plt.xticks(tickvalues, unlearnings)
     box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(MLAs, loc='center left', bbox_to_anchor=(1, 0.5))
+    # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    # ax.legend(MLAs, loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlabel('% points unlearned')
     plt.ylabel('Average Rank')
-    plt.title('Average Rank {} shards'.format(sh))
+    if sh > 1:
+        plt.title('Average Rank {} shards'.format(sh))
+    else:
+        plt.title('Average Rank {} shard'.format(sh))
     plt.show()
